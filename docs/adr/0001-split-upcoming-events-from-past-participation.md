@@ -1,0 +1,3 @@
+# Split Upcoming Events from Past Participation
+
+A diplomat's "next public address on July 30" and their "participation in the 2018 Brazzaville summit" are conceptually different objects: one is a marketing card that must auto-archive when the date passes, the other is a permanent career-record entry. Keeping them as one table with a Past/Future flag would let stale upcoming-event cards sit on the homepage — a classic abandonment signal for a political-figure site. We split them into two Content Item types — Upcoming Event and Past Participation — with separate Portal forms and separate Profile sections, so the upcoming feed stays automatically self-cleaning and the career timeline stays immutable historical record.
