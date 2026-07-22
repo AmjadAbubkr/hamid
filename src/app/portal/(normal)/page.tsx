@@ -18,6 +18,9 @@ export default function PortalPage() {
       <Link href="/portal/events" className="w-fit font-semibold text-zinc-950 underline underline-offset-4">
         Manage Upcoming Events
       </Link>
+      <Link href="/portal/articles" className="w-fit font-semibold text-zinc-950 underline underline-offset-4">
+        Manage Articles
+      </Link>
       <PasskeyEnrollment />
       <PortalLogout />
     </PortalFrame>

@@ -834,6 +834,26 @@ describe("Content Item schema (ticket 02)", () => {
       ).rejects.toThrow(/french.*body/i);
     });
 
+    it("does not permit a published event to return to draft", async () => {
+      const inserted = await db.query<{ id: string }>(`
+        INSERT INTO upcoming_event (
+          slug, title_ar, title_fr, event_date, venue_ar, venue_fr,
+          institution_ar, institution_fr, role, author_editor_id
+        )
+        VALUES (
+          'public-event', 'title ar', 'title fr', '2030-05-01', 'venue ar', 'venue fr',
+          'institution ar', 'institution fr', 'Speaker', $1
+        )
+        RETURNING id;
+      `, [editorId]);
+
+      await asAuthenticated(db, authUserId);
+      await db.query(`SELECT publish_content_item('upcoming_event', $1);`, [inserted.rows[0].id]);
+      await expect(
+        db.query(`UPDATE upcoming_event SET status = 'draft', published_at = null WHERE id = $1;`, [inserted.rows[0].id]),
+      ).rejects.toThrow(/cannot return to draft/i);
+    });
+
     it("atomically archives expired public and draft events", async () => {
       const expired = await db.query<{ id: string }>(`
         INSERT INTO upcoming_event (
@@ -970,6 +990,160 @@ describe("Content Item schema (ticket 02)", () => {
       expect(triggers.rows[0]).toMatchObject({ tgname: "upcoming_event_archive_netlify_rebuild" });
       expect(triggers.rows[0].definition).toMatch(/AFTER DELETE/i);
       expect(triggers.rows[1]).toMatchObject({ tgname: "upcoming_event_publish_netlify_rebuild" });
+      expect(triggers.rows[1].definition).toMatch(/AFTER UPDATE ON/i);
+      expect(triggers.rows[1].definition).toMatch(/NEW\.status = 'published'/i);
+    });
+  });
+
+  describe("Article schema", () => {
+    let editorId: string;
+    let authUserId: string;
+
+    beforeEach(async () => {
+      await asPostgres(db);
+      await db.exec("DELETE FROM article;");
+      await db.exec("DELETE FROM upcoming_event;");
+      await db.exec("DELETE FROM past_participation;");
+      await db.exec("DELETE FROM education_entry;");
+      await db.exec("DELETE FROM position_held;");
+      await db.exec("DELETE FROM editors;");
+      ({ editorId, authUserId } = await createEditor(db));
+    });
+
+    it("has bilingual rich-body and original-publication fields", async () => {
+      const columns = await db.query<{ column_name: string }>(`
+        SELECT column_name FROM information_schema.columns
+        WHERE table_name = 'article';
+      `);
+      const names = new Set(columns.rows.map((row) => row.column_name));
+      for (const required of [
+        "title_ar",
+        "title_fr",
+        "body_ar",
+        "body_fr",
+        "published_in_url",
+        "published_in_name_ar",
+        "published_in_name_fr",
+        "published_date",
+        "author_editor_id",
+      ]) {
+        expect(names.has(required), `missing ${required}`).toBe(true);
+      }
+
+      const selectPrivilege = await db.query<{ allowed: boolean }>(
+        `SELECT has_table_privilege('authenticated', 'article', 'SELECT') AS allowed;`,
+      );
+      expect(selectPrivilege.rows[0].allowed).toBe(true);
+      for (const operation of ["INSERT", "UPDATE", "DELETE"]) {
+        const privilege = await db.query<{ allowed: boolean }>(
+          `SELECT has_table_privilege('authenticated', 'article', '${operation}') AS allowed;`,
+        );
+        expect(privilege.rows[0].allowed).toBe(false);
+      }
+    });
+
+    it("publishes a complete Article through the fixed RPC branch", async () => {
+      const inserted = await db.query<{ id: string }>(`
+        INSERT INTO article (
+          slug, title_ar, title_fr, body_ar, body_fr, published_date,
+          published_in_url, published_in_name_ar, published_in_name_fr,
+          author_editor_id
+        )
+        VALUES (
+          'policy-brief', 'title ar', 'title fr', '<p>body ar</p>', '<p>body fr</p>', '2025-05-01',
+          'https://example.test/article', 'source ar', 'source fr', $1
+        )
+        RETURNING id;
+      `, [editorId]);
+
+      await asAuthenticated(db, authUserId);
+      await db.query(`SELECT publish_content_item('article', $1);`, [inserted.rows[0].id]);
+
+      const published = await db.query<{ status: string; published_at: string | null }>(`
+        SELECT status, published_at FROM article WHERE id = $1;
+      `, [inserted.rows[0].id]);
+      expect(published.rows[0]).toMatchObject({ status: "published" });
+      expect(published.rows[0].published_at).not.toBeNull();
+    });
+
+    it("rejects incomplete body and one-sided publication names at publication", async () => {
+      const missingBody = await db.query<{ id: string }>(`
+        INSERT INTO article (
+          slug, title_ar, title_fr, body_ar, published_date, author_editor_id
+        ) VALUES (
+          'missing-body', 'title ar', 'title fr', '<p>body ar</p>', '2025-05-01', $1
+        ) RETURNING id;
+      `, [editorId]);
+      const missingFrenchName = await db.query<{ id: string }>(`
+        INSERT INTO article (
+          slug, title_ar, title_fr, body_ar, body_fr, published_date,
+          published_in_name_ar, author_editor_id
+        ) VALUES (
+          'missing-source-fr', 'title ar', 'title fr', '<p>body ar</p>', '<p>body fr</p>', '2025-05-01',
+          'source ar', $1
+        ) RETURNING id;
+      `, [editorId]);
+
+      await asAuthenticated(db, authUserId);
+      await expect(
+        db.query(`SELECT publish_content_item('article', $1);`, [missingBody.rows[0].id]),
+      ).rejects.toThrow(/body/i);
+      await expect(
+        db.query(`SELECT publish_content_item('article', $1);`, [missingFrenchName.rows[0].id]),
+      ).rejects.toThrow(/French.*publication name/i);
+    });
+
+    it("accepts only HTTP(S) published-in URLs", async () => {
+      await expect(
+        db.query(`
+          INSERT INTO article (
+            slug, title_ar, title_fr, body_ar, body_fr, published_date,
+            published_in_url, author_editor_id
+          ) VALUES (
+            'unsafe-source-url', 'title ar', 'title fr', '<p>body ar</p>', '<p>body fr</p>', '2025-05-01',
+            'javascript:alert(1)', $1
+          );
+        `, [editorId]),
+      ).rejects.toThrow(/article_published_in_url_check/i);
+    });
+
+    it("allows anon to read only published Articles", async () => {
+      await db.query(`
+        INSERT INTO article (
+          slug, title_ar, title_fr, body_ar, body_fr, published_date, author_editor_id
+        ) VALUES
+          ('article-draft', 'title ar', 'title fr', '<p>body ar</p>', '<p>body fr</p>', '2025-01-01', $1),
+          ('article-public', 'title ar', 'title fr', '<p>body ar</p>', '<p>body fr</p>', '2025-02-01', $1);
+      `, [editorId]);
+      const publicArticle = await db.query<{ id: string }>(`
+        SELECT id FROM article WHERE slug = 'article-public';
+      `);
+
+      await asAuthenticated(db, authUserId);
+      await db.query(`SELECT publish_content_item('article', $1);`, [publicArticle.rows[0].id]);
+      await asAnon(db);
+
+      const visible = await db.query<{ slug: string }>(`
+        SELECT slug FROM article ORDER BY slug;
+      `);
+      expect(visible.rows.map((row) => row.slug)).toEqual(["article-public"]);
+    });
+
+    it("installs rebuild triggers for published updates and deletion", async () => {
+      const triggers = await db.query<{ tgname: string; definition: string }>(`
+        SELECT tgname, pg_get_triggerdef(oid) AS definition
+        FROM pg_trigger
+        WHERE tgname IN (
+          'article_publish_netlify_rebuild',
+          'article_delete_netlify_rebuild'
+        )
+        ORDER BY tgname;
+      `);
+
+      expect(triggers.rows).toHaveLength(2);
+      expect(triggers.rows[0]).toMatchObject({ tgname: "article_delete_netlify_rebuild" });
+      expect(triggers.rows[0].definition).toMatch(/AFTER DELETE/i);
+      expect(triggers.rows[1]).toMatchObject({ tgname: "article_publish_netlify_rebuild" });
       expect(triggers.rows[1].definition).toMatch(/AFTER UPDATE ON/i);
       expect(triggers.rows[1].definition).toMatch(/NEW\.status = 'published'/i);
     });
