@@ -465,4 +465,137 @@ describe("Content Item schema (ticket 02)", () => {
       expect(trigger.rows[0].definition).toMatch(/OLD\.status = 'draft'.*NEW\.status = 'published'/i);
     });
   });
+
+  describe("Education Entry schema", () => {
+    let editorId: string;
+    let authUserId: string;
+
+    beforeEach(async () => {
+      await asPostgres(db);
+      await db.exec("DELETE FROM education_entry;");
+      await db.exec("DELETE FROM position_held;");
+      await db.exec("DELETE FROM editors;");
+      ({ editorId, authUserId } = await createEditor(db));
+    });
+
+    it("has paired degree, institution, and optional honours fields", async () => {
+      const columns = await db.query<{ column_name: string }>(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'education_entry';
+      `);
+      const names = new Set(columns.rows.map((row) => row.column_name));
+
+      for (const required of [
+        "degree_ar",
+        "degree_fr",
+        "institution_ar",
+        "institution_fr",
+        "honours_ar",
+        "honours_fr",
+        "start_date",
+        "end_date",
+        "location",
+      ]) {
+        expect(names.has(required), `missing ${required}`).toBe(true);
+      }
+    });
+
+    it("publishes a complete Education Entry through the fixed RPC branch", async () => {
+      const inserted = await db.query<{ id: string }>(`
+        INSERT INTO education_entry (
+          slug, degree_ar, degree_fr, institution_ar, institution_fr,
+          start_date, end_date, location, author_editor_id
+        )
+        VALUES (
+          'masters', 'degree ar', 'degree fr', 'institution ar', 'institution fr',
+          '2020-09-01', '2021-06-30', 'N''Djamena', $1
+        )
+        RETURNING id;
+      `, [editorId]);
+
+      await asAuthenticated(db, authUserId);
+      await db.query(`SELECT publish_content_item('education_entry', $1);`, [inserted.rows[0].id]);
+
+      const published = await db.query<{ status: string; published_at: string | null }>(`
+        SELECT status, published_at FROM education_entry WHERE id = $1;
+      `, [inserted.rows[0].id]);
+      expect(published.rows[0]).toMatchObject({ status: "published" });
+      expect(published.rows[0].published_at).not.toBeNull();
+    });
+
+    it("rejects one-sided honours before publication", async () => {
+      const inserted = await db.query<{ id: string }>(`
+        INSERT INTO education_entry (
+          slug, degree_ar, degree_fr, institution_ar, institution_fr,
+          honours_ar, start_date, location, author_editor_id
+        )
+        VALUES (
+          'one-sided-honours', 'degree ar', 'degree fr', 'institution ar', 'institution fr',
+          'honours ar', '2020-09-01', 'N''Djamena', $1
+        )
+        RETURNING id;
+      `, [editorId]);
+
+      await asAuthenticated(db, authUserId);
+      await expect(
+        db.query(`SELECT publish_content_item('education_entry', $1);`, [inserted.rows[0].id]),
+      ).rejects.toThrow(/french.*body/i);
+    });
+
+    it("requires an end date before an Education Entry can publish", async () => {
+      const inserted = await db.query<{ id: string }>(`
+        INSERT INTO education_entry (
+          slug, degree_ar, degree_fr, institution_ar, institution_fr,
+          start_date, location, author_editor_id
+        )
+        VALUES (
+          'education-without-end', 'degree ar', 'degree fr', 'institution ar', 'institution fr',
+          '2020-09-01', 'N''Djamena', $1
+        )
+        RETURNING id;
+      `, [editorId]);
+
+      await asAuthenticated(db, authUserId);
+      await expect(
+        db.query(`SELECT publish_content_item('education_entry', $1);`, [inserted.rows[0].id]),
+      ).rejects.toThrow(/end date/i);
+    });
+
+    it("allows anon to read only published Education Entries", async () => {
+      await db.query(`
+        INSERT INTO education_entry (
+          slug, degree_ar, degree_fr, institution_ar, institution_fr,
+          start_date, end_date, location, author_editor_id
+        )
+        VALUES
+          ('education-draft', 'degree ar', 'degree fr', 'institution ar', 'institution fr', '2020-09-01', NULL, 'N''Djamena', $1),
+          ('education-public', 'degree ar', 'degree fr', 'institution ar', 'institution fr', '2020-09-01', '2021-06-30', 'N''Djamena', $1);
+      `, [editorId]);
+      const publicRow = await db.query<{ id: string }>(`
+        SELECT id FROM education_entry WHERE slug = 'education-public';
+      `);
+
+      await asAuthenticated(db, authUserId);
+      await db.query(`SELECT publish_content_item('education_entry', $1);`, [publicRow.rows[0].id]);
+      await asAnon(db);
+
+      const visible = await db.query<{ slug: string }>(`
+        SELECT slug FROM education_entry ORDER BY slug;
+      `);
+      expect(visible.rows.map((row) => row.slug)).toEqual(["education-public"]);
+    });
+
+    it("fires its rebuild trigger only when status changes from draft to published", async () => {
+      const trigger = await db.query<{ definition: string }>(`
+        SELECT pg_get_triggerdef(oid) AS definition
+        FROM pg_trigger
+        WHERE tgname = 'education_entry_publish_netlify_rebuild';
+      `);
+
+      expect(trigger.rows).toHaveLength(1);
+      expect(trigger.rows[0].definition).toMatch(/AFTER UPDATE OF status/i);
+      expect(trigger.rows[0].definition).toMatch(/OLD\.status = 'draft'.*NEW\.status = 'published'/i);
+    });
+  });
 });

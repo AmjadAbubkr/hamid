@@ -9,6 +9,9 @@ export default function PortalPage() {
       <Link href="/portal/positions" className="w-fit font-semibold text-zinc-950 underline underline-offset-4">
         Manage Positions Held
       </Link>
+      <Link href="/portal/education" className="w-fit font-semibold text-zinc-950 underline underline-offset-4">
+        Manage Education Entries
+      </Link>
       <PasskeyEnrollment />
       <PortalLogout />
     </PortalFrame>
