@@ -17,3 +17,7 @@ export const PARTICIPATION_ROLES = [
 ] as const;
 
 export type ParticipationRole = (typeof PARTICIPATION_ROLES)[number];
+
+export function getParticipationRoleEditorLabel(role: ParticipationRole) {
+  return role === "usher" ? "Usher" : role;
+}

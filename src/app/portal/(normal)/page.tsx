@@ -15,6 +15,9 @@ export default function PortalPage() {
       <Link href="/portal/participations" className="w-fit font-semibold text-zinc-950 underline underline-offset-4">
         Manage Past Participations
       </Link>
+      <Link href="/portal/events" className="w-fit font-semibold text-zinc-950 underline underline-offset-4">
+        Manage Upcoming Events
+      </Link>
       <PasskeyEnrollment />
       <PortalLogout />
     </PortalFrame>

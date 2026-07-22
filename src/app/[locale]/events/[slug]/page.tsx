@@ -1,59 +1,62 @@
 import { notFound } from "next/navigation";
 import { CanonicalFooter } from "@/components/canonical-footer";
 import {
-  getParticipationRoleLabel,
-  getPublishedPastParticipationBySlug,
-  getPublishedPastParticipations,
-} from "@/lib/content/participations";
-import { isLocaleCode, LOCALES } from "@/lib/i18n/locales";
+  getPublishedUpcomingEventBySlug,
+  getPublishedUpcomingEvents,
+} from "@/lib/content/events";
+import { getParticipationRoleLabel } from "@/lib/content/participations";
+import { isLocaleCode, LOCALES, type LocaleCode } from "@/lib/i18n/locales";
 import { safeHttpUrl } from "@/lib/safe-http-url";
 
-type ParticipationDetailPageProps = {
+type EventDetailPageProps = {
   params: Promise<{ locale: string; slug: string }>;
 };
 
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  const participations = await getPublishedPastParticipations();
+  const events = await getPublishedUpcomingEvents();
 
   return LOCALES.flatMap((locale) =>
-    participations.map((participation) => ({
-      locale,
-      slug: participation.slug,
-    })),
+    events.map((event) => ({ locale, slug: event.slug })),
   );
 }
 
-export default async function ParticipationDetailPage({
-  params,
-}: ParticipationDetailPageProps) {
+function formatEventDate(date: string, locale: LocaleCode) {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-TD" : "fr-TD", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${date}T00:00:00Z`));
+}
+
+export default async function EventDetailPage({ params }: EventDetailPageProps) {
   const { locale: rawLocale, slug } = await params;
   if (!isLocaleCode(rawLocale)) notFound();
 
   const locale = rawLocale;
-  const participation = await getPublishedPastParticipationBySlug(slug);
-  if (!participation) notFound();
+  const event = await getPublishedUpcomingEventBySlug(slug);
+  if (!event) notFound();
 
-  const title = locale === "ar" ? participation.titleAr : participation.titleFr;
-  const body = locale === "ar" ? participation.bodyAr : participation.bodyFr;
-  const venue = locale === "ar" ? participation.venueAr : participation.venueFr;
-  const institution =
-    locale === "ar" ? participation.institutionAr : participation.institutionFr;
+  const title = locale === "ar" ? event.titleAr : event.titleFr;
+  const body = locale === "ar" ? event.bodyAr : event.bodyFr;
+  const venue = locale === "ar" ? event.venueAr : event.venueFr;
+  const institution = locale === "ar" ? event.institutionAr : event.institutionFr;
   const role = getParticipationRoleLabel(
-    participation.role,
+    event.role,
     locale,
-    participation.roleOtherAr,
-    participation.roleOtherFr,
+    event.roleOtherAr,
+    event.roleOtherFr,
   );
-  const sourceUrl = safeHttpUrl(participation.sourceUrl);
+  const registrationUrl = safeHttpUrl(event.registrationUrl);
 
   return (
     <>
       <main className="ps-6 pe-6 mx-auto w-full max-w-3xl flex-1 py-12 text-start">
         <article className="flex flex-col gap-5">
           <p className="text-sm text-zinc-500">
-            {participation.eventDateLabel}
+            {formatEventDate(event.eventDate, locale)}
           </p>
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
             {title}
@@ -79,19 +82,19 @@ export default async function ParticipationDetailPage({
             </div>
           </dl>
           {body ? <p className="leading-relaxed text-zinc-700">{body}</p> : null}
-          {sourceUrl ? (
+          {registrationUrl ? (
             <a
-              href={sourceUrl}
+              href={registrationUrl}
               className="w-fit rounded-s-sm rounded-e-sm underline decoration-zinc-400 underline-offset-4"
               rel="noreferrer"
               target="_blank"
             >
-              {locale === "ar" ? "المصدر" : "Source"}
+              {locale === "ar" ? "التسجيل" : "S’inscrire"}
             </a>
           ) : null}
         </article>
       </main>
-      <CanonicalFooter pathname={`/${locale}/participations/${participation.slug}`} />
+      <CanonicalFooter pathname={`/${locale}/events/${event.slug}`} />
     </>
   );
 }

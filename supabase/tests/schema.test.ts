@@ -749,4 +749,229 @@ describe("Content Item schema (ticket 02)", () => {
       expect(trigger.rows[0].definition).toMatch(/OLD\.status = 'draft'.*NEW\.status = 'published'/i);
     });
   });
+
+  describe("Upcoming Event schema and archive operation", () => {
+    let editorId: string;
+    let authUserId: string;
+
+    beforeEach(async () => {
+      await asPostgres(db);
+      await db.exec("DELETE FROM upcoming_event;");
+      await db.exec("DELETE FROM past_participation;");
+      await db.exec("DELETE FROM education_entry;");
+      await db.exec("DELETE FROM position_held;");
+      await db.exec("DELETE FROM editors;");
+      ({ editorId, authUserId } = await createEditor(db));
+    });
+
+    it("has the future-event fields while reusing participation_role", async () => {
+      const columns = await db.query<{ column_name: string }>(`
+        SELECT column_name FROM information_schema.columns
+        WHERE table_name = 'upcoming_event';
+      `);
+      const names = new Set(columns.rows.map((row) => row.column_name));
+      for (const required of [
+        "event_date",
+        "venue_ar",
+        "venue_fr",
+        "institution_ar",
+        "institution_fr",
+        "role",
+        "role_other_ar",
+        "role_other_fr",
+        "registration_url",
+      ]) {
+        expect(names.has(required), `missing ${required}`).toBe(true);
+      }
+
+      const roleType = await db.query<{ udt_name: string }>(`
+        SELECT udt_name
+        FROM information_schema.columns
+        WHERE table_name = 'upcoming_event' AND column_name = 'role';
+      `);
+      expect(roleType.rows[0].udt_name).toBe("participation_role");
+    });
+
+    it("publishes a complete upcoming event only through the fixed RPC branch", async () => {
+      const inserted = await db.query<{ id: string }>(`
+        INSERT INTO upcoming_event (
+          slug, title_ar, title_fr, event_date, venue_ar, venue_fr,
+          institution_ar, institution_fr, role, author_editor_id
+        )
+        VALUES (
+          'future-forum', 'title ar', 'title fr', '2030-05-01', 'venue ar', 'venue fr',
+          'institution ar', 'institution fr', 'Speaker', $1
+        )
+        RETURNING id;
+      `, [editorId]);
+
+      await asAuthenticated(db, authUserId);
+      await db.query(`SELECT publish_content_item('upcoming_event', $1);`, [inserted.rows[0].id]);
+
+      const published = await db.query<{ status: string; published_at: string | null }>(`
+        SELECT status, published_at FROM upcoming_event WHERE id = $1;
+      `, [inserted.rows[0].id]);
+      expect(published.rows[0]).toMatchObject({ status: "published" });
+      expect(published.rows[0].published_at).not.toBeNull();
+    });
+
+    it("rejects a one-sided optional body at publication", async () => {
+      const inserted = await db.query<{ id: string }>(`
+        INSERT INTO upcoming_event (
+          slug, title_ar, title_fr, body_ar, event_date, venue_ar, venue_fr,
+          institution_ar, institution_fr, role, author_editor_id
+        )
+        VALUES (
+          'unpaired-event-body', 'title ar', 'title fr', 'body ar', '2030-05-01',
+          'venue ar', 'venue fr', 'institution ar', 'institution fr', 'Speaker', $1
+        )
+        RETURNING id;
+      `, [editorId]);
+
+      await asAuthenticated(db, authUserId);
+      await expect(
+        db.query(`SELECT publish_content_item('upcoming_event', $1);`, [inserted.rows[0].id]),
+      ).rejects.toThrow(/french.*body/i);
+    });
+
+    it("atomically archives expired public and draft events", async () => {
+      const expired = await db.query<{ id: string }>(`
+        INSERT INTO upcoming_event (
+          slug, title_ar, title_fr, body_ar, body_fr, event_date,
+          venue_ar, venue_fr, institution_ar, institution_fr,
+          role, role_other_ar, role_other_fr, registration_url, author_editor_id
+        )
+        VALUES (
+          'expired-forum', 'title ar', 'title fr', 'body ar', 'body fr', '2020-01-05',
+          'venue ar', 'venue fr', 'institution ar', 'institution fr',
+          'Other', 'role ar', 'role fr', 'https://example.test/register', $1
+        )
+        RETURNING id;
+      `, [editorId]);
+      await db.query(`
+        INSERT INTO upcoming_event (
+          slug, title_ar, title_fr, event_date, venue_ar, venue_fr,
+          institution_ar, institution_fr, author_editor_id
+        )
+        VALUES (
+          'expired-draft', 'draft ar', 'draft fr', '2020-01-05', 'venue ar', 'venue fr',
+          'institution ar', 'institution fr', $1
+        );
+      `, [editorId]);
+
+      await asAuthenticated(db, authUserId);
+      await db.query(`SELECT publish_content_item('upcoming_event', $1);`, [expired.rows[0].id]);
+      await asPostgres(db);
+
+      await db.query(`
+        INSERT INTO past_participation (
+          slug, title_ar, title_fr, event_date, event_date_label,
+          venue_ar, venue_fr, institution_ar, institution_fr, author_editor_id
+        )
+        VALUES (
+          'expired-forum', 'existing ar', 'existing fr', '2019-01-01', '2019-01-01',
+          'venue ar', 'venue fr', 'institution ar', 'institution fr', $1
+        );
+      `, [editorId]);
+
+      const archived = await db.query<{ count: number }>(`
+        SELECT archive_expired_upcoming_events() AS count;
+      `);
+      expect(archived.rows[0].count).toBe(2);
+
+      const source = await db.query<{ count: number }>(`
+        SELECT count(*)::int AS count FROM upcoming_event WHERE id = $1;
+      `, [expired.rows[0].id]);
+      expect(source.rows[0].count).toBe(0);
+
+      const past = await db.query<{
+        status: string;
+        slug: string;
+        title_ar: string;
+        title_fr: string;
+        body_ar: string | null;
+        body_fr: string | null;
+        venue_ar: string;
+        venue_fr: string;
+        institution_ar: string;
+        institution_fr: string;
+        event_date_label: string;
+        role: string;
+        role_other_ar: string | null;
+        role_other_fr: string | null;
+        source_url: string | null;
+      }>(`
+        SELECT status, slug, title_ar, title_fr, body_ar, body_fr,
+               venue_ar, venue_fr, institution_ar, institution_fr,
+               event_date_label, role::text AS role,
+               role_other_ar, role_other_fr, source_url
+        FROM past_participation WHERE id = $1;
+      `, [expired.rows[0].id]);
+      expect(past.rows[0]).toMatchObject({
+        status: "published",
+        title_ar: "title ar",
+        title_fr: "title fr",
+        body_ar: "body ar",
+        body_fr: "body fr",
+        venue_ar: "venue ar",
+        venue_fr: "venue fr",
+        institution_ar: "institution ar",
+        institution_fr: "institution fr",
+        event_date_label: "2020-01-05",
+        role: "Other",
+        role_other_ar: "role ar",
+        role_other_fr: "role fr",
+        source_url: "https://example.test/register",
+      });
+      expect(past.rows[0].slug).toMatch(/^expired-forum-archived-/);
+
+      const archivedDraft = await db.query<{ status: string }>(`
+        SELECT status FROM past_participation WHERE slug = 'expired-draft';
+      `);
+      expect(archivedDraft.rows).toEqual([{ status: "draft" }]);
+    });
+
+    it("allows anon to read only published upcoming events", async () => {
+      await db.query(`
+        INSERT INTO upcoming_event (
+          slug, title_ar, title_fr, event_date, venue_ar, venue_fr,
+          institution_ar, institution_fr, author_editor_id
+        )
+        VALUES
+          ('event-draft', 'title ar', 'title fr', '2030-05-01', 'venue ar', 'venue fr', 'institution ar', 'institution fr', $1),
+          ('event-public', 'title ar', 'title fr', '2030-05-02', 'venue ar', 'venue fr', 'institution ar', 'institution fr', $1);
+      `, [editorId]);
+      const publicEvent = await db.query<{ id: string }>(`
+        SELECT id FROM upcoming_event WHERE slug = 'event-public';
+      `);
+
+      await asAuthenticated(db, authUserId);
+      await db.query(`SELECT publish_content_item('upcoming_event', $1);`, [publicEvent.rows[0].id]);
+      await asAnon(db);
+
+      const visible = await db.query<{ slug: string }>(`
+        SELECT slug FROM upcoming_event ORDER BY slug;
+      `);
+      expect(visible.rows.map((row) => row.slug)).toEqual(["event-public"]);
+    });
+
+    it("installs build triggers for published updates and deletion", async () => {
+      const triggers = await db.query<{ tgname: string; definition: string }>(`
+        SELECT tgname, pg_get_triggerdef(oid) AS definition
+        FROM pg_trigger
+        WHERE tgname IN (
+          'upcoming_event_publish_netlify_rebuild',
+          'upcoming_event_archive_netlify_rebuild'
+        )
+        ORDER BY tgname;
+      `);
+
+      expect(triggers.rows).toHaveLength(2);
+      expect(triggers.rows[0]).toMatchObject({ tgname: "upcoming_event_archive_netlify_rebuild" });
+      expect(triggers.rows[0].definition).toMatch(/AFTER DELETE/i);
+      expect(triggers.rows[1]).toMatchObject({ tgname: "upcoming_event_publish_netlify_rebuild" });
+      expect(triggers.rows[1].definition).toMatch(/AFTER UPDATE ON/i);
+      expect(triggers.rows[1].definition).toMatch(/NEW\.status = 'published'/i);
+    });
+  });
 });

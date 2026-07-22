@@ -72,9 +72,21 @@ Recovery uses the approved narrow exception: after a matching recovery code is c
 
 ### Content publish rebuild hook
 
-The Profile is rebuilt when a Position Held, Education Entry, or Past Participation first moves from Draft to Published. Create a Netlify build hook, enable `pg_net` in Supabase Database Extensions, and save the hook URL in Supabase Vault as `netlify_build_hook_url`. The migrations read that secret only inside database triggers and send asynchronous POSTs after publication; it is never a browser variable or a repository value. Without that configured Vault secret, publication still succeeds but no static rebuild is requested.
+The Profile is rebuilt when a Position Held, Education Entry, or Past Participation first moves from Draft to Published, and whenever a published Upcoming Event is saved or removed. Create a Netlify build hook, enable `pg_net` in Supabase Database Extensions, and save the hook URL in Supabase Vault as `netlify_build_hook_url`. The migrations read that secret only inside database triggers and send asynchronous POSTs after publication; it is never a browser variable or a repository value. Without that configured Vault secret, publication still succeeds but no static rebuild is requested.
 
 The migration runner is intentionally forward-only. If Ticket 06 must be rolled back before its data is retained, execute [`supabase/rollback/00000000000008_past_participation.down.sql`](./supabase/rollback/00000000000008_past_participation.down.sql) in a transaction. It removes only Past Participation objects and restores the shared publish function to its Position Held and Education Entry version.
+
+### Upcoming Event archive job
+
+The homepage shows the next three Upcoming Events; the full chronological list is at `/[locale]/events`. Before applying migration `00000000000009_upcoming_event.sql` to Supabase, enable the `pg_cron` extension in Database Extensions. The migration then registers `archive_expired_upcoming_events_daily` for 00:05 UTC. It atomically moves published rows whose `event_date` is before `CURRENT_DATE` into Past Participation and deletes the source rows. If `pg_cron` is enabled after the migration, create the same daily job once from the Supabase SQL editor:
+
+```sql
+select cron.schedule(
+  'archive_expired_upcoming_events_daily',
+  '5 0 * * *',
+  'select public.archive_expired_upcoming_events();'
+);
+```
 
 ## Project conventions
 
