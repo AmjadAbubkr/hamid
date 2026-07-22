@@ -50,6 +50,11 @@ returns trigger
 language plpgsql
 as $$
 begin
+  if tg_op = 'UPDATE' and old.status = 'published' and new.status <> 'published' then
+    raise exception 'Published Upcoming Events cannot return to draft.'
+      using errcode = '23514';
+  end if;
+
   if new.status = 'published' then
     if tg_op = 'INSERT'
        and current_user <> (
