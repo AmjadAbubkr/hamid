@@ -8,7 +8,7 @@ Account provisioning (the very first passkey enrollment on a brand-new Supabase 
 
 **Blocked by:** 01 — Project skeleton: Next.js + Tailwind + Supabase on Netlify
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
 - [ ] `/portal/login` route enrolls a passkey via Supabase Auth WebAuthn; the enrolled credential is stored in Supabase Auth's WebAuthn credentials table
 - [ ] A `recovery_codes` table holds single-use numeric codes (16+ digits, generated securely), hashed at rest, with `used_at` and `issued_at` timestamps
@@ -17,3 +17,9 @@ Account provisioning (the very first passkey enrollment on a brand-new Supabase 
 - [ ] Re-enrollment is mandatory: a recovery session cannot navigate anywhere in `/portal/*` except the re-enrollment screen until at least one new passkey is enrolled
 - [ ] The first-ever Editor account is created via a documented developer script (`npm run bootstrap:editor`), not via the Portal UI; the script is referenced in the README
 - [ ] Logout fully clears the Supabase Auth session; returning to `/portal/*` without re-auth always redirects to `/portal/login`
+
+## Implementation note (2026-07-22)
+
+The Portal implementation, migration checks, TypeScript check, focused authentication checks, and production build are complete. A hosted Supabase/browser acceptance pass remains: enable the experimental Passkeys provider, configure the production and local WebAuthn origins/RP ID, set the server-only variables documented in the README, run `npm run bootstrap:editor`, and perform an actual platform or hardware-key enrollment/recovery ceremony.
+
+The ticket's instruction to consume a code after an arbitrary failed guess was deliberately adjusted: only a matching code is consumed. Both cases return the same generic error, but consuming a real code for unrelated guesses would let an attacker lock the sole Editor out by submitting random values.

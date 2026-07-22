@@ -1,4 +1,5 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 let cachedClient: SupabaseClient | null = null;
 let cachedKey: string | null = null;
@@ -19,7 +20,13 @@ export function getSupabaseClient(): SupabaseClient {
     return cachedClient;
   }
 
-  cachedClient = createClient(supabaseUrl, supabaseAnonKey);
+  cachedClient = createBrowserClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      experimental: {
+        passkey: true,
+      },
+    },
+  });
   cachedKey = key;
   return cachedClient;
 }

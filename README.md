@@ -48,6 +48,28 @@ The site is built to deploy to **Netlify** on every `git push** via `@netlify/pl
 
 Once connected, every `git push` produces a Netlify deploy preview URL. Until the site is connected, `netlify.toml` alone does not produce deploys — local `npm run build` is the verification path.
 
+## Portal bootstrap and passkeys
+
+The Portal has no public signup and no password login. Before first use, create a Supabase project, apply the migrations in [`supabase/migrations`](./supabase/migrations), enable the experimental **Passkeys** provider, and register the local/production redirect origins and a stable WebAuthn RP ID. Changing the RP ID invalidates existing passkeys.
+
+Set these server-only values locally and in Netlify (never expose the service-role key to the browser):
+
+```bash
+SUPABASE_SERVICE_ROLE_KEY=...
+SUPABASE_EDITOR_EMAIL=...
+NEXT_PUBLIC_SITE_URL=https://your-site.example
+```
+
+Then run the one-time bootstrap command:
+
+```bash
+npm run bootstrap:editor
+```
+
+It creates the sole Editor identity and prints one short-lived bootstrap link. Open it in a browser, enroll a passkey, then store the one-time numeric recovery code offline. The normal Portal login only uses a passkey.
+
+Recovery uses the approved narrow exception: after a matching recovery code is consumed, the server redirects the browser through a one-time magic-link bridge solely to establish the temporary session that Supabase requires for new passkey enrollment. The bridge URL is never returned by the Portal API. An arbitrary incorrect code is not consumed, preventing an attacker from permanently locking out the Editor by guessing; every response remains generic.
+
 ## Project conventions
 
 - **RTL convention (ADR-0008):** all layout utilities in `className` MUST use Tailwind logical-property utilities (`ps-`, `pe-`, `ms-`, `me-`, `text-start`, `text-end`, `rounded-s-*`, `rounded-e-*`). Physical-direction utilities (`pl-`, `pr-`, `ml-`, `mr-`, `text-left`, `text-right`, etc.) are **banned by a custom ESLint rule** at [`eslint-rules/no-physical-tailwind.ts`](./eslint-rules/no-physical-tailwind.ts) and registered in [`eslint.config.mjs`](./eslint.config.mjs) under the local plugin name `hamid-local/no-physical-tailwind`.
