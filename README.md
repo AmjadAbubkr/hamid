@@ -70,6 +70,10 @@ It creates the sole Editor identity and prints one short-lived bootstrap link. O
 
 Recovery uses the approved narrow exception: after a matching recovery code is consumed, the server redirects the browser through a one-time magic-link bridge solely to establish the temporary session that Supabase requires for new passkey enrollment. The bridge URL is never returned by the Portal API. An arbitrary incorrect code is not consumed, preventing an attacker from permanently locking out the Editor by guessing; every response remains generic.
 
+### Position Held publish rebuild hook
+
+The Profile is rebuilt when a Position Held first moves from Draft to Published. Create a Netlify build hook, enable `pg_net` in Supabase Database Extensions, and save the hook URL in Supabase Vault as `netlify_build_hook_url`. The migration reads that secret only inside a database trigger and sends an asynchronous POST after publication; it is never a browser variable or a repository value. Without that configured Vault secret, publication still succeeds but no static rebuild is requested.
+
 ## Project conventions
 
 - **RTL convention (ADR-0008):** all layout utilities in `className` MUST use Tailwind logical-property utilities (`ps-`, `pe-`, `ms-`, `me-`, `text-start`, `text-end`, `rounded-s-*`, `rounded-e-*`). Physical-direction utilities (`pl-`, `pr-`, `ml-`, `mr-`, `text-left`, `text-right`, etc.) are **banned by a custom ESLint rule** at [`eslint-rules/no-physical-tailwind.ts`](./eslint-rules/no-physical-tailwind.ts) and registered in [`eslint.config.mjs`](./eslint.config.mjs) under the local plugin name `hamid-local/no-physical-tailwind`.

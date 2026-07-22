@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { isLocaleCode, LOCALE_META } from "@/lib/i18n/locales";
-import { CanonicalFooter } from "@/components/canonical-footer";
 import { LocaleDocumentDirector } from "@/components/locale-document-director";
 import "@/app/globals.css";
 
@@ -63,7 +62,6 @@ export default async function LocaleLayout({
         <LocaleDocumentDirector />
         <div className="flex flex-1 flex-col w-full">
           {children}
-          <CanonicalFooter />
         </div>
       </body>
     </html>

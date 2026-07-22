@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { isLocaleCode, LOCALE_META, type LocaleCode } from "@/lib/i18n/locales";
 import { STRINGS } from "@/lib/i18n/strings";
+import { CanonicalFooter } from "@/components/canonical-footer";
 import { DemoCard } from "@/components/demo-card";
 import Link from "next/link";
 
@@ -16,6 +17,7 @@ export default async function LocalePage({ params }: Params) {
   const otherLocale: LocaleCode = locale === "ar" ? "fr" : "ar";
 
   return (
+    <>
     <main
       className="ps-6 pe-6 ms-0 me-0 mx-auto w-full max-w-3xl flex-1 flex flex-col gap-8 py-12"
     >
@@ -39,5 +41,7 @@ export default async function LocalePage({ params }: Params) {
         </Link>
       </nav>
     </main>
+    <CanonicalFooter pathname={`/${locale}`} />
+    </>
   );
 }

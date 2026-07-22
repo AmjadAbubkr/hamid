@@ -1,11 +1,14 @@
-"use client";
+type CanonicalFooterProps = {
+  pathname: string;
+};
 
-import { usePathname } from "next/navigation";
+function getSiteOrigin() {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  return new URL(siteUrl).origin;
+}
 
-export function CanonicalFooter() {
-  const pathname = usePathname();
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const canonical = `${origin}${pathname}`;
+export function CanonicalFooter({ pathname }: CanonicalFooterProps) {
+  const canonical = new URL(pathname, getSiteOrigin()).toString();
 
   return (
     <footer

@@ -451,4 +451,18 @@ describe("Content Item schema (ticket 02)", () => {
       ).rejects.toThrow(/not authorized/i);
     });
   });
+
+  describe("Position Held publication rebuild trigger", () => {
+    it("runs only for a draft-to-published status change", async () => {
+      const trigger = await db.query<{ definition: string }>(`
+        SELECT pg_get_triggerdef(oid) AS definition
+        FROM pg_trigger
+        WHERE tgname = 'position_held_publish_netlify_rebuild';
+      `);
+
+      expect(trigger.rows).toHaveLength(1);
+      expect(trigger.rows[0].definition).toMatch(/AFTER UPDATE OF status/i);
+      expect(trigger.rows[0].definition).toMatch(/OLD\.status = 'draft'.*NEW\.status = 'published'/i);
+    });
+  });
 });
