@@ -598,4 +598,155 @@ describe("Content Item schema (ticket 02)", () => {
       expect(trigger.rows[0].definition).toMatch(/OLD\.status = 'draft'.*NEW\.status = 'published'/i);
     });
   });
+
+  describe("Past Participation schema", () => {
+    let editorId: string;
+    let authUserId: string;
+
+    beforeEach(async () => {
+      await asPostgres(db);
+      await db.exec("DELETE FROM past_participation;");
+      await db.exec("DELETE FROM education_entry;");
+      await db.exec("DELETE FROM position_held;");
+      await db.exec("DELETE FROM editors;");
+      ({ editorId, authUserId } = await createEditor(db));
+    });
+
+    it("has the expanded canonical role enum and historical date fields", async () => {
+      const roles = await db.query<{ enumlabel: string }>(`
+        SELECT enumlabel
+        FROM pg_enum
+        WHERE enumtypid = 'public.participation_role'::regtype
+        ORDER BY enumsortorder;
+      `);
+      expect(roles.rows.map((row) => row.enumlabel)).toEqual([
+        "Speaker", "Panelist", "Host", "Delegate", "Rapporteur", "Facilitator",
+        "Coordinator", "usher", "President", "Representative", "Ambassador",
+        "Trainer", "Member", "Participant", "Other",
+      ]);
+
+      const columns = await db.query<{ column_name: string }>(`
+        SELECT column_name FROM information_schema.columns
+        WHERE table_name = 'past_participation';
+      `);
+      const names = new Set(columns.rows.map((row) => row.column_name));
+      for (const required of [
+        "event_date",
+        "event_end_date",
+        "event_date_label",
+        "venue_ar",
+        "venue_fr",
+        "institution_ar",
+        "institution_fr",
+        "role",
+        "role_other_ar",
+        "role_other_fr",
+        "source_url",
+      ]) {
+        expect(names.has(required), `missing ${required}`).toBe(true);
+      }
+    });
+
+    it("publishes a complete Other-role participation through the fixed RPC branch", async () => {
+      const inserted = await db.query<{ id: string }>(`
+        INSERT INTO past_participation (
+          slug, title_ar, title_fr, event_date, event_date_label,
+          venue_ar, venue_fr, institution_ar, institution_fr,
+          role, role_other_ar, role_other_fr, author_editor_id
+        )
+        VALUES (
+          'forum', 'title ar', 'title fr', '2024-05-01', 'May 2024',
+          'venue ar', 'venue fr', 'institution ar', 'institution fr',
+          'Other', 'role ar', 'role fr', $1
+        )
+        RETURNING id;
+      `, [editorId]);
+
+      await asAuthenticated(db, authUserId);
+      await db.query(`SELECT publish_content_item('past_participation', $1);`, [inserted.rows[0].id]);
+
+      const published = await db.query<{ status: string; published_at: string | null }>(`
+        SELECT status, published_at FROM past_participation WHERE id = $1;
+      `, [inserted.rows[0].id]);
+      expect(published.rows[0]).toMatchObject({ status: "published" });
+      expect(published.rows[0].published_at).not.toBeNull();
+    });
+
+    it("rejects Other when either Locale of role_other is missing", async () => {
+      const inserted = await db.query<{ id: string }>(`
+        INSERT INTO past_participation (
+          slug, title_ar, title_fr, event_date, event_date_label,
+          venue_ar, venue_fr, institution_ar, institution_fr,
+          role, role_other_ar, author_editor_id
+        )
+        VALUES (
+          'missing-other-fr', 'title ar', 'title fr', '2024-05-01', 'May 2024',
+          'venue ar', 'venue fr', 'institution ar', 'institution fr',
+          'Other', 'role ar', $1
+        )
+        RETURNING id;
+      `, [editorId]);
+
+      await asAuthenticated(db, authUserId);
+      await expect(
+        db.query(`SELECT publish_content_item('past_participation', $1);`, [inserted.rows[0].id]),
+      ).rejects.toThrow(/other role/i);
+    });
+
+    it("rejects changes to a published historical record", async () => {
+      const inserted = await db.query<{ id: string }>(`
+        INSERT INTO past_participation (
+          slug, title_ar, title_fr, event_date, event_date_label,
+          venue_ar, venue_fr, institution_ar, institution_fr, role, author_editor_id
+        )
+        VALUES (
+          'immutable-record', 'title ar', 'title fr', '2024-05-01', 'May 2024',
+          'venue ar', 'venue fr', 'institution ar', 'institution fr', 'Speaker', $1
+        )
+        RETURNING id;
+      `, [editorId]);
+
+      await asAuthenticated(db, authUserId);
+      await db.query(`SELECT publish_content_item('past_participation', $1);`, [inserted.rows[0].id]);
+      await expect(
+        db.query(`UPDATE past_participation SET title_fr = 'updated' WHERE id = $1;`, [inserted.rows[0].id]),
+      ).rejects.toThrow(/immutable/i);
+    });
+
+    it("allows anon to read only published participations", async () => {
+      await db.query(`
+        INSERT INTO past_participation (
+          slug, title_ar, title_fr, event_date, event_date_label,
+          venue_ar, venue_fr, institution_ar, institution_fr, role, author_editor_id
+        )
+        VALUES
+          ('participation-draft', 'title ar', 'title fr', '2024-05-01', 'May 2024', 'venue ar', 'venue fr', 'institution ar', 'institution fr', 'Speaker', $1),
+          ('participation-public', 'title ar', 'title fr', '2024-05-01', 'May 2024', 'venue ar', 'venue fr', 'institution ar', 'institution fr', 'Speaker', $1);
+      `, [editorId]);
+      const publicRow = await db.query<{ id: string }>(`
+        SELECT id FROM past_participation WHERE slug = 'participation-public';
+      `);
+
+      await asAuthenticated(db, authUserId);
+      await db.query(`SELECT publish_content_item('past_participation', $1);`, [publicRow.rows[0].id]);
+      await asAnon(db);
+
+      const visible = await db.query<{ slug: string }>(`
+        SELECT slug FROM past_participation ORDER BY slug;
+      `);
+      expect(visible.rows.map((row) => row.slug)).toEqual(["participation-public"]);
+    });
+
+    it("fires its rebuild trigger only on first publication", async () => {
+      const trigger = await db.query<{ definition: string }>(`
+        SELECT pg_get_triggerdef(oid) AS definition
+        FROM pg_trigger
+        WHERE tgname = 'past_participation_publish_netlify_rebuild';
+      `);
+
+      expect(trigger.rows).toHaveLength(1);
+      expect(trigger.rows[0].definition).toMatch(/AFTER UPDATE OF status/i);
+      expect(trigger.rows[0].definition).toMatch(/OLD\.status = 'draft'.*NEW\.status = 'published'/i);
+    });
+  });
 });

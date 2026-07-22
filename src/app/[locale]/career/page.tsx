@@ -9,6 +9,11 @@ import {
   getPublishedEducationEntries,
   type EducationEntry,
 } from "@/lib/content/education";
+import {
+  getParticipationRoleLabel,
+  getPublishedPastParticipations,
+  type PastParticipation,
+} from "@/lib/content/participations";
 import { isLocaleCode, type LocaleCode } from "@/lib/i18n/locales";
 
 type CareerPageProps = {
@@ -41,6 +46,21 @@ function educationText(entry: EducationEntry, locale: LocaleCode) {
   };
 }
 
+function participationText(entry: PastParticipation, locale: LocaleCode) {
+  return {
+    title: locale === "ar" ? entry.titleAr : entry.titleFr,
+    body: locale === "ar" ? entry.bodyAr : entry.bodyFr,
+    venue: locale === "ar" ? entry.venueAr : entry.venueFr,
+    institution: locale === "ar" ? entry.institutionAr : entry.institutionFr,
+    role: getParticipationRoleLabel(
+      entry.role,
+      locale,
+      entry.roleOtherAr,
+      entry.roleOtherFr,
+    ),
+  };
+}
+
 export default async function CareerPage({ params }: CareerPageProps) {
   const { locale: rawLocale } = await params;
   if (!isLocaleCode(rawLocale)) notFound();
@@ -48,6 +68,7 @@ export default async function CareerPage({ params }: CareerPageProps) {
   const locale = rawLocale;
   const positions = await getPublishedPositions();
   const educationEntries = await getPublishedEducationEntries();
+  const participations = await getPublishedPastParticipations();
 
   return (
     <>
@@ -153,6 +174,60 @@ export default async function CareerPage({ params }: CareerPageProps) {
                       {localized.honours ? (
                         <p className="leading-relaxed text-zinc-700">
                           {localized.honours}
+                        </p>
+                      ) : null}
+                    </article>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </section>
+
+        <section className="mt-12" aria-labelledby="participations-heading">
+          <h2
+            id="participations-heading"
+            className="text-2xl font-semibold tracking-tight text-zinc-900"
+          >
+            {locale === "ar" ? "المشاركات السابقة" : "Participations passées"}
+          </h2>
+
+          {participations.length === 0 ? (
+            <p className="mt-4 text-zinc-600">
+              {locale === "ar"
+                ? "لا توجد مشاركات منشورة بعد."
+                : "Aucune participation publiée pour le moment."}
+            </p>
+          ) : (
+            <ol className="mt-4 flex flex-col gap-7 border-s border-zinc-300 ps-6">
+              {participations.map((entry) => {
+                const localized = participationText(entry, locale);
+
+                return (
+                  <li key={entry.slug} className="relative text-start">
+                    <span
+                      aria-hidden="true"
+                      className="absolute start-[-1.72rem] top-2 h-3 w-3 rounded-full bg-zinc-900 ring-4 ring-white"
+                    />
+                    <article className="flex flex-col gap-2">
+                      <p className="text-sm text-zinc-500">
+                        {entry.eventDateLabel}
+                      </p>
+                      <h3 className="text-xl font-semibold text-zinc-900">
+                        <Link
+                          href={`/${locale}/participations/${entry.slug}`}
+                          className="rounded-s-sm rounded-e-sm underline decoration-zinc-400 underline-offset-4"
+                        >
+                          {localized.title}
+                        </Link>
+                      </h3>
+                      <p className="text-zinc-700">{localized.institution}</p>
+                      <p className="text-sm text-zinc-500">
+                        {localized.venue} · {localized.role}
+                      </p>
+                      {localized.body ? (
+                        <p className="leading-relaxed text-zinc-700">
+                          {localized.body}
                         </p>
                       ) : null}
                     </article>

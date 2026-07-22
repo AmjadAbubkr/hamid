@@ -72,7 +72,9 @@ Recovery uses the approved narrow exception: after a matching recovery code is c
 
 ### Content publish rebuild hook
 
-The Profile is rebuilt when a Position Held or Education Entry first moves from Draft to Published. Create a Netlify build hook, enable `pg_net` in Supabase Database Extensions, and save the hook URL in Supabase Vault as `netlify_build_hook_url`. The migrations read that secret only inside database triggers and send asynchronous POSTs after publication; it is never a browser variable or a repository value. Without that configured Vault secret, publication still succeeds but no static rebuild is requested.
+The Profile is rebuilt when a Position Held, Education Entry, or Past Participation first moves from Draft to Published. Create a Netlify build hook, enable `pg_net` in Supabase Database Extensions, and save the hook URL in Supabase Vault as `netlify_build_hook_url`. The migrations read that secret only inside database triggers and send asynchronous POSTs after publication; it is never a browser variable or a repository value. Without that configured Vault secret, publication still succeeds but no static rebuild is requested.
+
+The migration runner is intentionally forward-only. If Ticket 06 must be rolled back before its data is retained, execute [`supabase/rollback/00000000000008_past_participation.down.sql`](./supabase/rollback/00000000000008_past_participation.down.sql) in a transaction. It removes only Past Participation objects and restores the shared publish function to its Position Held and Education Entry version.
 
 ## Project conventions
 
