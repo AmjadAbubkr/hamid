@@ -13,3 +13,27 @@ This ticket's smallest deliverable is "verify the abstraction holds": if ticket 
 - [ ] `/career` page renders Education Entries under a distinct subheading below Positions Held, with the same bilingual timeline treatment
 - [ ] Draft Education Entry items return 404 on their slug URL; preview works authenticated only
 - [ ] The Supabase→Netlify build hook fires on Education Entry publish (no separate wiring needed if ticket 04 hooked on `content_items` generally)
+
+## Initial dataset — Education Entries confirmed from CV (13 Sept 2025)
+
+Sourced from `D:\hamid\CV AZAZ SANS SIGNATURE 2025.pdf`. The Editor will enter these via the Portal once ticket 05 ships; not auto-seeded.
+
+1. Master 2 en Droit Public — Droit International et Communautaire
+   - `institution`: Université de Yaoundé II/SOA
+   - `start_date`: 2018, `end_date`: 2019
+   - `location`: Yaoundé, Cameroun
+   - `slug`: m2-droit-public-yaounde-ii-2019
+
+2. Licence en Droit Public
+   - `institution`: Université de Yaoundé II/SOA
+   - `start_date`: 2017, `end_date`: 2018
+   - `location`: Yaoundé, Cameroun
+   - `slug`: licence-droit-public-yaounde-ii-2018
+
+3. Baccalauréat A4 (série littéraire)
+   - `institution`: Lycée Moderne de Bongor
+   - `start_date`: 2012, `end_date`: 2013
+   - `location`: Bongor, Tchad
+   - `slug`: bac-a4-lycee-bongor-2013
+
+Arabic translations for `degree_ar` and `institution_ar` (where applicable — e.g., Université de Yaoundé II may stay in Latin script per common Chadian academic conventions) will be drafted by the Editor. The bilingual publish gate from ticket 02 requires either `degree_ar`+`degree_fr` or paired `institution_*` fields non-empty — implementation should clarify which fields are required-paired.

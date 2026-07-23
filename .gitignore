@@ -48,3 +48,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# personal signed CV — never commit
+CV*.pdf
+*.signed.pdf

@@ -1148,4 +1148,358 @@ describe("Content Item schema (ticket 02)", () => {
       expect(triggers.rows[1].definition).toMatch(/NEW\.status = 'published'/i);
     });
   });
+
+  describe("Gallery Photo schema and Storage contract", () => {
+    let editorId: string;
+    let authUserId: string;
+
+    beforeEach(async () => {
+      await asPostgres(db);
+      await db.exec("DELETE FROM gallery_photo;");
+      await db.exec("DELETE FROM article;");
+      await db.exec("DELETE FROM upcoming_event;");
+      await db.exec("DELETE FROM past_participation;");
+      await db.exec("DELETE FROM education_entry;");
+      await db.exec("DELETE FROM position_held;");
+      await db.exec("DELETE FROM editors;");
+      ({ editorId, authUserId } = await createEditor(db));
+    });
+
+    it("has a storage key and paired Gallery metadata without image bytes", async () => {
+      const columns = await db.query<{ column_name: string }>(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'gallery_photo';
+      `);
+      const names = new Set(columns.rows.map((row) => row.column_name));
+      for (const required of [
+        "storage_path",
+        "caption_ar",
+        "caption_fr",
+        "taken_date",
+        "photographer_credit_ar",
+        "photographer_credit_fr",
+        "category_ar",
+        "category_fr",
+        "author_editor_id",
+      ]) {
+        expect(names.has(required), `missing ${required}`).toBe(true);
+      }
+      expect(names.has("image_bytes")).toBe(false);
+
+      const selectPrivilege = await db.query<{ allowed: boolean }>(
+        `SELECT has_table_privilege('authenticated', 'gallery_photo', 'SELECT') AS allowed;`,
+      );
+      expect(selectPrivilege.rows[0].allowed).toBe(true);
+      for (const operation of ["INSERT", "UPDATE", "DELETE"]) {
+        const privilege = await db.query<{ allowed: boolean }>(
+          `SELECT has_table_privilege('authenticated', 'gallery_photo', '${operation}') AS allowed;`,
+        );
+        expect(privilege.rows[0].allowed).toBe(false);
+      }
+    });
+
+    it("publishes a complete Gallery Photo only through the fixed RPC branch", async () => {
+      const inserted = await db.query<{ id: string }>(`
+        INSERT INTO gallery_photo (
+          slug, storage_path, caption_ar, caption_fr, taken_date,
+          photographer_credit_ar, photographer_credit_fr,
+          category_ar, category_fr, author_editor_id
+        ) VALUES (
+          'national-forum', $2, 'caption ar', 'caption fr', '2025-05-01',
+          'credit ar', 'credit fr', 'category ar', 'category fr', $1
+        ) RETURNING id;
+      `, [editorId, `${editorId}/national-forum.webp`]);
+
+      await asAuthenticated(db, authUserId);
+      await db.query(`SELECT publish_content_item('gallery_photo', $1);`, [inserted.rows[0].id]);
+
+      const published = await db.query<{ status: string; published_at: string | null }>(`
+        SELECT status, published_at FROM gallery_photo WHERE id = $1;
+      `, [inserted.rows[0].id]);
+      expect(published.rows[0]).toMatchObject({ status: "published" });
+      expect(published.rows[0].published_at).not.toBeNull();
+    });
+
+    it("rejects a missing image, taken date, or one-sided optional metadata at publication", async () => {
+      const missingImage = await db.query<{ id: string }>(`
+        INSERT INTO gallery_photo (
+          slug, caption_ar, caption_fr, taken_date, author_editor_id
+        ) VALUES ('missing-image', 'caption ar', 'caption fr', '2025-05-01', $1)
+        RETURNING id;
+      `, [editorId]);
+      const missingDate = await db.query<{ id: string }>(`
+        INSERT INTO gallery_photo (
+          slug, storage_path, caption_ar, caption_fr, author_editor_id
+        ) VALUES ('missing-date', $2, 'caption ar', 'caption fr', $1)
+        RETURNING id;
+      `, [editorId, `${editorId}/missing-date.png`]);
+      const oneSidedCredit = await db.query<{ id: string }>(`
+        INSERT INTO gallery_photo (
+          slug, storage_path, caption_ar, caption_fr, taken_date,
+          photographer_credit_ar, author_editor_id
+        ) VALUES ('one-sided-credit', $2, 'caption ar', 'caption fr', '2025-05-01', 'credit ar', $1)
+        RETURNING id;
+      `, [editorId, `${editorId}/one-sided-credit.jpg`]);
+
+      await asAuthenticated(db, authUserId);
+      await expect(
+        db.query(`SELECT publish_content_item('gallery_photo', $1);`, [missingImage.rows[0].id]),
+      ).rejects.toThrow(/gallery image/i);
+      await expect(
+        db.query(`SELECT publish_content_item('gallery_photo', $1);`, [missingDate.rows[0].id]),
+      ).rejects.toThrow(/taken date/i);
+      await expect(
+        db.query(`SELECT publish_content_item('gallery_photo', $1);`, [oneSidedCredit.rows[0].id]),
+      ).rejects.toThrow(/French photographer credit/i);
+    });
+
+    it("allows an editor to return a published Gallery Photo to draft after its image is moved privately", async () => {
+      const inserted = await db.query<{ id: string }>(`
+        INSERT INTO gallery_photo (
+          slug, storage_path, caption_ar, caption_fr, taken_date, author_editor_id
+        ) VALUES ('unpublishable-photo', $2, 'caption ar', 'caption fr', '2025-05-01', $1)
+        RETURNING id;
+      `, [editorId, `${editorId}/unpublishable-photo.webp`]);
+
+      await asAuthenticated(db, authUserId);
+      await db.query(`SELECT publish_content_item('gallery_photo', $1);`, [inserted.rows[0].id]);
+      await asPostgres(db);
+      await db.query(`
+        UPDATE gallery_photo
+        SET status = 'draft', published_at = null
+        WHERE id = $1;
+      `, [inserted.rows[0].id]);
+
+      const row = await db.query<{ status: string; published_at: string | null }>(`
+        SELECT status, published_at FROM gallery_photo WHERE id = $1;
+      `, [inserted.rows[0].id]);
+      expect(row.rows[0]).toEqual({ status: "draft", published_at: null });
+    });
+
+    it("allows anon to read only published Gallery Photos", async () => {
+      await db.query(`
+        INSERT INTO gallery_photo (
+          slug, storage_path, caption_ar, caption_fr, taken_date, author_editor_id
+        ) VALUES
+          ('photo-draft', $2, 'caption ar', 'caption fr', '2025-05-01', $1),
+          ('photo-public', $3, 'caption ar', 'caption fr', '2025-05-02', $1);
+      `, [editorId, `${editorId}/photo-draft.jpg`, `${editorId}/photo-public.jpg`]);
+      const publicPhoto = await db.query<{ id: string }>(`
+        SELECT id FROM gallery_photo WHERE slug = 'photo-public';
+      `);
+
+      await asAuthenticated(db, authUserId);
+      await db.query(`SELECT publish_content_item('gallery_photo', $1);`, [publicPhoto.rows[0].id]);
+      await asAnon(db);
+
+      const visible = await db.query<{ slug: string }>(`
+        SELECT slug FROM gallery_photo ORDER BY slug;
+      `);
+      expect(visible.rows.map((row) => row.slug)).toEqual(["photo-public"]);
+    });
+
+    it("declares private staging and public gallery buckets with editor-only writes", () => {
+      const migration = readFileSync(
+        join(MIGRATIONS_DIR, "00000000000011_gallery_photo.sql"),
+        "utf8",
+      );
+
+      expect(migration).toMatch(/'gallery-staging'[\s\S]*false[\s\S]*8388608/);
+      expect(migration).toMatch(/'gallery-public'[\s\S]*true[\s\S]*8388608/);
+      expect(migration).toMatch(/image\/jpeg[\s\S]*image\/png[\s\S]*image\/webp/);
+      expect(migration).toMatch(/gallery_public_read[\s\S]*bucket_id = 'gallery-public'/);
+      expect(migration).toMatch(/gallery_staging_editor_read[\s\S]*bucket_id = 'gallery-staging'/);
+      expect(migration).toMatch(/gallery_editor_write[\s\S]*public\.current_editor_id\(\)::text/);
+    });
+
+    it("installs rebuild triggers for published changes, unpublishing, and deletion", async () => {
+      const triggers = await db.query<{ tgname: string; definition: string }>(`
+        SELECT tgname, pg_get_triggerdef(oid) AS definition
+        FROM pg_trigger
+        WHERE tgname IN (
+          'gallery_photo_publish_netlify_rebuild',
+          'gallery_photo_delete_netlify_rebuild'
+        )
+        ORDER BY tgname;
+      `);
+
+      expect(triggers.rows).toHaveLength(2);
+      expect(triggers.rows[0]).toMatchObject({ tgname: "gallery_photo_delete_netlify_rebuild" });
+      expect(triggers.rows[0].definition).toMatch(/AFTER DELETE/i);
+      expect(triggers.rows[1]).toMatchObject({ tgname: "gallery_photo_publish_netlify_rebuild" });
+      expect(triggers.rows[1].definition).toMatch(/AFTER UPDATE ON/i);
+      expect(triggers.rows[1].definition).toMatch(/NEW\.status = 'published'.*OLD\.status = 'published'/i);
+    });
+  });
+
+  describe("singleton Tagline schema", () => {
+    async function claimAndResetTagline() {
+      await asPostgres(db);
+      const existingOwner = await db.query<{ editor_id: string; auth_user_id: string }>(`
+        SELECT e.id AS editor_id, e.auth_user_id
+        FROM tagline t
+        JOIN editors e ON e.id = t.author_editor_id
+        WHERE t.singleton_key = true;
+      `);
+      let owner = existingOwner.rows[0];
+
+      if (!owner) {
+        const created = await createEditor(db);
+        await db.query(`
+          UPDATE tagline
+          SET author_editor_id = $1
+          WHERE singleton_key = true;
+        `, [created.editorId]);
+        owner = { editor_id: created.editorId, auth_user_id: created.authUserId };
+      }
+
+      await db.query(`
+        UPDATE tagline
+        SET status = 'draft', published_at = null, tagline_ar = '', tagline_fr = ''
+        WHERE singleton_key = true;
+      `);
+      return owner;
+    }
+
+    it("seeds exactly one safe, ownerless Draft before an Editor claims it", async () => {
+      await asPostgres(db);
+      const seeded = await db.query<{
+        singleton_key: boolean;
+        status: string;
+        tagline_ar: string;
+        tagline_fr: string;
+        author_editor_id: string | null;
+      }>(`
+        SELECT singleton_key, status, tagline_ar, tagline_fr, author_editor_id
+        FROM tagline;
+      `);
+
+      expect(seeded.rows).toEqual([{
+        singleton_key: true,
+        status: "draft",
+        tagline_ar: "",
+        tagline_fr: "",
+        author_editor_id: null,
+      }]);
+    });
+
+    it("has exactly paired Locale fields and server-owned mutations", async () => {
+      const columns = await db.query<{ column_name: string }>(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'tagline';
+      `);
+      const names = new Set(columns.rows.map((row) => row.column_name));
+      expect(names.has("tagline_ar")).toBe(true);
+      expect(names.has("tagline_fr")).toBe(true);
+      expect(names.has("singleton_key")).toBe(true);
+      expect(names.has("author_editor_id")).toBe(true);
+
+      const selectPrivilege = await db.query<{ allowed: boolean }>(
+        `SELECT has_table_privilege('authenticated', 'tagline', 'SELECT') AS allowed;`,
+      );
+      expect(selectPrivilege.rows[0].allowed).toBe(true);
+      for (const operation of ["INSERT", "UPDATE", "DELETE"]) {
+        const privilege = await db.query<{ allowed: boolean }>(
+          `SELECT has_table_privilege('authenticated', 'tagline', '${operation}') AS allowed;`,
+        );
+        expect(privilege.rows[0].allowed).toBe(false);
+      }
+    });
+
+    it("publishes both Locales only through the fixed RPC branch after the Editor claims it", async () => {
+      const owner = await claimAndResetTagline();
+      await db.query(`
+        UPDATE tagline
+        SET tagline_ar = 'tagline ar', tagline_fr = 'tagline fr'
+        WHERE singleton_key = true;
+      `);
+
+      await asAuthenticated(db, owner.auth_user_id);
+      await db.query(`SELECT publish_content_item('tagline', id) FROM tagline WHERE singleton_key = true;`);
+
+      const published = await db.query<{ status: string; published_at: string | null }>(`
+        SELECT status, published_at FROM tagline WHERE singleton_key = true;
+      `);
+      expect(published.rows[0]).toMatchObject({ status: "published" });
+      expect(published.rows[0].published_at).not.toBeNull();
+    });
+
+    it("blocks publication when either Locale is empty, while retaining a private Draft", async () => {
+      const owner = await claimAndResetTagline();
+      await db.query(`
+        UPDATE tagline SET tagline_ar = 'tagline ar' WHERE singleton_key = true;
+      `);
+
+      await asAuthenticated(db, owner.auth_user_id);
+      await expect(
+        db.query(`SELECT publish_content_item('tagline', id) FROM tagline WHERE singleton_key = true;`),
+      ).rejects.toThrow(/French title is empty/i);
+
+      await asPostgres(db);
+      const draft = await db.query<{ status: string }>(`
+        SELECT status FROM tagline WHERE singleton_key = true;
+      `);
+      expect(draft.rows).toEqual([{ status: "draft" }]);
+    });
+
+    it("allows anon to read the published singleton but never its Draft", async () => {
+      const owner = await claimAndResetTagline();
+      await db.query(`
+        UPDATE tagline
+        SET tagline_ar = 'tagline ar', tagline_fr = 'tagline fr'
+        WHERE singleton_key = true;
+      `);
+      await asAuthenticated(db, owner.auth_user_id);
+      await db.query(`SELECT publish_content_item('tagline', id) FROM tagline WHERE singleton_key = true;`);
+      await asAnon(db);
+
+      const visible = await db.query<{ status: string }>(`
+        SELECT status FROM tagline;
+      `);
+      expect(visible.rows).toEqual([{ status: "published" }]);
+
+      await asPostgres(db);
+      await db.query(`
+        UPDATE tagline SET status = 'draft', published_at = null WHERE singleton_key = true;
+      `);
+      await asAnon(db);
+      const hidden = await db.query(`SELECT id FROM tagline;`);
+      expect(hidden.rows).toHaveLength(0);
+    });
+
+    it("cannot transfer ownership, duplicate, or delete the singleton", async () => {
+      const owner = await claimAndResetTagline();
+      await asPostgres(db);
+      const second = await createEditor(db);
+
+      await expect(
+        db.query(`UPDATE tagline SET author_editor_id = $1 WHERE singleton_key = true;`, [second.editorId]),
+      ).rejects.toThrow(/ownership cannot be transferred/i);
+      await expect(
+        db.query(`INSERT INTO tagline (singleton_key) VALUES (true);`),
+      ).rejects.toThrow(/tagline_singleton_key_unique/i);
+      await expect(
+        db.query(`DELETE FROM tagline WHERE singleton_key = true;`),
+      ).rejects.toThrow(/cannot be deleted/i);
+
+      const currentOwner = await db.query<{ author_editor_id: string }>(`
+        SELECT author_editor_id FROM tagline WHERE singleton_key = true;
+      `);
+      expect(currentOwner.rows).toEqual([{ author_editor_id: owner.editor_id }]);
+    });
+
+    it("rebuilds when the published singleton changes or returns to Draft", async () => {
+      const trigger = await db.query<{ definition: string }>(`
+        SELECT pg_get_triggerdef(oid) AS definition
+        FROM pg_trigger
+        WHERE tgname = 'tagline_publish_netlify_rebuild';
+      `);
+
+      expect(trigger.rows).toHaveLength(1);
+      expect(trigger.rows[0].definition).toMatch(/AFTER UPDATE ON/i);
+      expect(trigger.rows[0].definition).toMatch(/NEW\.status = 'published'.*OLD\.status = 'published'/i);
+    });
+  });
 });

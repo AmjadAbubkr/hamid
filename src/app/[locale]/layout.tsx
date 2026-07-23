@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { isLocaleCode, LOCALE_META } from "@/lib/i18n/locales";
 import { LocaleDocumentDirector } from "@/components/locale-document-director";
+import { PublicNavigation } from "@/components/public/public-navigation";
 import "@/app/globals.css";
 
 const geistSans = Geist({
@@ -60,6 +61,7 @@ export default async function LocaleLayout({
     >
       <body className="min-h-full flex flex-col">
         <LocaleDocumentDirector />
+        <PublicNavigation locale={locale} />
         <div className="flex flex-1 flex-col w-full">
           {children}
         </div>

@@ -17,7 +17,12 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("next/link", () => ({
   __esModule: true,
-  default: vi.fn(() => null),
+  default: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a>,
+}));
+
+vi.mock("next/image", () => ({
+  __esModule: true,
+  default: ({ alt }: { alt: string }) => <img alt={alt} />,
 }));
 
 vi.mock("next/font/google", () => ({
@@ -28,7 +33,6 @@ vi.mock("next/font/google", () => ({
 vi.mock("next/font/local", () => ({}));
 
 import LocalePage from "@/app/[locale]/page";
-import { STRINGS } from "@/lib/i18n/strings";
 
 function makeParams(locale: string) {
   return Promise.resolve({ locale });
@@ -39,17 +43,19 @@ describe("LocalePage (src/app/[locale]/page.tsx)", () => {
     notFoundMock.mockClear();
   });
 
-  it("renders the Arabic Locale home page with the Arabic demo card title", async () => {
+  it("renders the Arabic Locale home page with the official profile hero", async () => {
     const ui = await LocalePage({ params: makeParams("ar") });
     render(ui);
-    expect(screen.getByText(STRINGS.ar.title)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Hamid Mahamat Azaz" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Hamid Mahamat Azaz" })).toBeInTheDocument();
     expect(notFoundMock).not.toHaveBeenCalled();
   });
 
-  it("renders the French Locale home page with the French demo card title", async () => {
+  it("renders the French Locale home page with the official current-role fallback", async () => {
     const ui = await LocalePage({ params: makeParams("fr") });
     render(ui);
-    expect(screen.getByText(STRINGS.fr.title)).toBeInTheDocument();
+    expect(screen.getByText("Inspecteur technique")).toBeInTheDocument();
+    expect(screen.getByText("Ministère de la Communication")).toBeInTheDocument();
     expect(notFoundMock).not.toHaveBeenCalled();
   });
 

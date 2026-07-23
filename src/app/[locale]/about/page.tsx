@@ -1,0 +1,264 @@
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import hamidProfile from "../../../../imgs/hamidprofile.jpg";
+import { CanonicalFooter } from "@/components/canonical-footer";
+import { MotionReveal, PageEntrance } from "@/components/motion-reveal";
+import { getPublishedEducationEntries } from "@/lib/content/education";
+import { getPublishedPastParticipations } from "@/lib/content/participations";
+import { getPublishedPositions } from "@/lib/content/positions";
+import { getPublishedTagline } from "@/lib/content/tagline";
+import { isLocaleCode, type LocaleCode } from "@/lib/i18n/locales";
+
+type AboutPageProps = {
+  params: Promise<{ locale: string }>;
+};
+
+const ABOUT_COPY: Record<LocaleCode, {
+  heading: string;
+  currentPosition: string;
+  positions: string;
+  education: string;
+  participations: string;
+  present: string;
+  viewCareer: string;
+  viewParticipation: string;
+  noCurrentPosition: string;
+  noPositions: string;
+  noEducation: string;
+  noParticipations: string;
+  portraitAlt: string;
+}> = {
+  ar: {
+    heading: "نبذة",
+    currentPosition: "المنصب الحالي",
+    positions: "المناصب التي شغلها",
+    education: "التعليم",
+    participations: "مشاركات سابقة",
+    present: "حتى الآن",
+    viewCareer: "عرض المسيرة كاملة",
+    viewParticipation: "عرض التفاصيل",
+    noCurrentPosition: "لا يوجد منصب حالي منشور بعد.",
+    noPositions: "لا توجد مناصب منشورة بعد.",
+    noEducation: "لا توجد دراسات منشورة بعد.",
+    noParticipations: "لا توجد مشاركات منشورة بعد.",
+    portraitAlt: "صورة حميد",
+  },
+  fr: {
+    heading: "À propos",
+    currentPosition: "Fonction actuelle",
+    positions: "Postes occupés",
+    education: "Formation",
+    participations: "Participations passées",
+    present: "Aujourd’hui",
+    viewCareer: "Voir l’ensemble du parcours",
+    viewParticipation: "Voir les détails",
+    noCurrentPosition: "Aucune fonction actuelle publiée pour le moment.",
+    noPositions: "Aucun poste publié pour le moment.",
+    noEducation: "Aucune formation publiée pour le moment.",
+    noParticipations: "Aucune participation publiée pour le moment.",
+    portraitAlt: "Portrait de Hamid",
+  },
+};
+
+function formatDate(date: string, locale: LocaleCode) {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-TD" : "fr-TD", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${date}T00:00:00Z`));
+}
+
+function textFor(locale: LocaleCode, values: { ar: string | null; fr: string | null }) {
+  return locale === "ar" ? values.ar : values.fr;
+}
+
+function siteOrigin() {
+  return new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000");
+}
+
+export async function generateMetadata({ params }: AboutPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocaleCode(locale)) return {};
+
+  const copy = ABOUT_COPY[locale];
+  return {
+    title: `Hamid — ${copy.heading}`,
+    metadataBase: siteOrigin(),
+    alternates: {
+      canonical: `/${locale}/about`,
+      languages: {
+        ar: "/ar/about",
+        fr: "/fr/about",
+      },
+    },
+  };
+}
+
+export default async function AboutPage({ params }: AboutPageProps) {
+  const { locale: rawLocale } = await params;
+  if (!isLocaleCode(rawLocale)) notFound();
+
+  const locale = rawLocale;
+  const copy = ABOUT_COPY[locale];
+  const [tagline, positions, educationEntries, participations] = await Promise.all([
+    getPublishedTagline(),
+    getPublishedPositions(),
+    getPublishedEducationEntries(),
+    getPublishedPastParticipations(),
+  ]);
+  const currentPosition = positions.find((position) => position.endDate === null);
+  const visibleParticipations = participations.slice(0, 3);
+  const taglineText = tagline ? textFor(locale, { ar: tagline.textAr, fr: tagline.textFr }) : null;
+
+  return (
+    <>
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-16 px-6 py-12 text-start">
+        <PageEntrance>
+          <section className="grid items-center gap-8 border-b-2 border-[#fdc34d] pb-12 md:grid-cols-[minmax(0,1fr)_minmax(15rem,22rem)]">
+            <div className="order-2 flex max-w-3xl flex-col gap-5 md:order-1">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#7b5800]">Hamid</p>
+              <h1 className="font-serif text-4xl font-bold leading-tight tracking-tight text-[#04162e] sm:text-5xl">
+                {copy.heading}
+              </h1>
+              {taglineText ? (
+                <p className="max-w-2xl border-s-4 border-[#fdc34d] ps-5 text-xl leading-relaxed text-[#2e3132]">
+                  {taglineText}
+                </p>
+              ) : null}
+            </div>
+            <div className="order-1 overflow-hidden rounded-lg border border-[#c5c6ce] bg-[#f3f4f5] md:order-2">
+              <Image
+                src={hamidProfile}
+                alt={copy.portraitAlt}
+                priority
+                className="aspect-[4/5] h-full w-full object-cover"
+              />
+            </div>
+          </section>
+        </PageEntrance>
+
+        <MotionReveal>
+          <section aria-labelledby="about-current-position" className="flex flex-col gap-5">
+            <h2 id="about-current-position" className="font-serif text-3xl font-semibold text-[#04162e]">
+              {copy.currentPosition}
+            </h2>
+            {currentPosition ? (
+              <article className="border-t-2 border-[#fdc34d] bg-white p-6 ring-1 ring-[#c5c6ce]">
+                <p className="text-sm text-[#44474d]">
+                  {formatDate(currentPosition.startDate, locale)} — {copy.present}
+                </p>
+                <h3 className="mt-2 font-serif text-2xl font-semibold text-[#04162e]">
+                  <Link href={`/${locale}/career/${currentPosition.slug}`} className="underline decoration-[#fdc34d] decoration-2 underline-offset-4">
+                    {locale === "ar" ? currentPosition.titleAr : currentPosition.titleFr}
+                  </Link>
+                </h3>
+                <p className="mt-2 text-lg text-[#2e3132]">{currentPosition.institution}</p>
+                <p className="mt-1 text-sm text-[#44474d]">{currentPosition.location}</p>
+              </article>
+            ) : (
+              <p className="text-[#44474d]">{copy.noCurrentPosition}</p>
+            )}
+          </section>
+        </MotionReveal>
+
+        <MotionReveal delay={80}>
+          <section aria-labelledby="about-positions" className="flex flex-col gap-5">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <h2 id="about-positions" className="font-serif text-3xl font-semibold text-[#04162e]">
+                {copy.positions}
+              </h2>
+              <Link href={`/${locale}/career`} className="text-sm font-semibold text-[#04162e] underline decoration-[#fdc34d] decoration-2 underline-offset-4">
+                {copy.viewCareer}
+              </Link>
+            </div>
+            {positions.length ? (
+              <ol className="flex flex-col gap-6 border-s-2 border-[#04162e] ps-6">
+                {positions.map((position) => (
+                  <li key={position.slug} className="relative">
+                    <span aria-hidden="true" className="absolute start-[-1.9rem] top-2 h-3 w-3 rounded-full bg-[#fdc34d] ring-4 ring-[#f8f9fa]" />
+                    <article className="flex flex-col gap-1">
+                      <p className="text-sm text-[#44474d]">
+                        {formatDate(position.startDate, locale)} — {position.endDate ? formatDate(position.endDate, locale) : copy.present}
+                      </p>
+                      <h3 className="font-serif text-xl font-semibold text-[#04162e]">
+                        <Link href={`/${locale}/career/${position.slug}`} className="underline decoration-[#c5c6ce] underline-offset-4">
+                          {locale === "ar" ? position.titleAr : position.titleFr}
+                        </Link>
+                      </h3>
+                      <p className="text-[#2e3132]">{position.institution}</p>
+                    </article>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-[#44474d]">{copy.noPositions}</p>
+            )}
+          </section>
+        </MotionReveal>
+
+        <MotionReveal delay={160}>
+          <section aria-labelledby="about-education" className="flex flex-col gap-5">
+            <h2 id="about-education" className="font-serif text-3xl font-semibold text-[#04162e]">
+              {copy.education}
+            </h2>
+            {educationEntries.length ? (
+              <ol className="grid gap-4 md:grid-cols-2">
+                {educationEntries.map((entry) => (
+                  <li key={entry.slug}>
+                    <article className="h-full border-t-2 border-[#fdc34d] bg-white p-5 ring-1 ring-[#c5c6ce]">
+                      <p className="text-sm text-[#44474d]">
+                        {formatDate(entry.startDate, locale)} — {entry.endDate ? formatDate(entry.endDate, locale) : copy.present}
+                      </p>
+                      <h3 className="mt-2 font-serif text-xl font-semibold text-[#04162e]">
+                        <Link href={`/${locale}/career/education/${entry.slug}`} className="underline decoration-[#c5c6ce] underline-offset-4">
+                          {locale === "ar" ? entry.degreeAr : entry.degreeFr}
+                        </Link>
+                      </h3>
+                      <p className="mt-2 text-[#2e3132]">{locale === "ar" ? entry.institutionAr : entry.institutionFr}</p>
+                    </article>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-[#44474d]">{copy.noEducation}</p>
+            )}
+          </section>
+        </MotionReveal>
+
+        <MotionReveal delay={240}>
+          <section aria-labelledby="about-participations" className="flex flex-col gap-5">
+            <h2 id="about-participations" className="font-serif text-3xl font-semibold text-[#04162e]">
+              {copy.participations}
+            </h2>
+            {visibleParticipations.length ? (
+              <ol className="grid gap-4 md:grid-cols-3">
+                {visibleParticipations.map((participation) => (
+                  <li key={participation.slug}>
+                    <article className="flex h-full flex-col gap-2 bg-[#f3f4f5] p-5 ring-1 ring-[#c5c6ce]">
+                      <p className="text-sm text-[#44474d]">{participation.eventDateLabel}</p>
+                      <h3 className="font-serif text-xl font-semibold text-[#04162e]">
+                        <Link href={`/${locale}/participations/${participation.slug}`} className="underline decoration-[#fdc34d] decoration-2 underline-offset-4">
+                          {locale === "ar" ? participation.titleAr : participation.titleFr}
+                        </Link>
+                      </h3>
+                      <p className="text-sm text-[#2e3132]">{locale === "ar" ? participation.venueAr : participation.venueFr}</p>
+                      <Link href={`/${locale}/participations/${participation.slug}`} className="mt-auto w-fit text-sm font-semibold text-[#04162e] underline underline-offset-4">
+                        {copy.viewParticipation}
+                      </Link>
+                    </article>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-[#44474d]">{copy.noParticipations}</p>
+            )}
+          </section>
+        </MotionReveal>
+      </main>
+      <CanonicalFooter pathname={`/${locale}/about`} />
+    </>
+  );
+}

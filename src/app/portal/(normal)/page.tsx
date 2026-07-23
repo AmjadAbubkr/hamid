@@ -21,6 +21,12 @@ export default function PortalPage() {
       <Link href="/portal/articles" className="w-fit font-semibold text-zinc-950 underline underline-offset-4">
         Manage Articles
       </Link>
+      <Link href="/portal/gallery" className="w-fit font-semibold text-zinc-950 underline underline-offset-4">
+        Manage Gallery Photos
+      </Link>
+      <Link href="/portal/tagline" className="w-fit font-semibold text-zinc-950 underline underline-offset-4">
+        Edit Tagline
+      </Link>
       <PasskeyEnrollment />
       <PortalLogout />
     </PortalFrame>

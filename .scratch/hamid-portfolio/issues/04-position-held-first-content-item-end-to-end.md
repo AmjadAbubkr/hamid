@@ -12,6 +12,28 @@ Canonical footer per ADR-0009 §3: every public page renders the full canonical 
 
 Deploy: on publish, a Supabase DB trigger calls a Netlify build hook so the static Profile rebuilds within a minute of the Editor hitting Publish.
 
+## Initial dataset — current Position Held (to seed the first published row when the Portal is ready)
+
+Real-world data confirmed by user on 2026-07-22, sourced from Decree n° 1005/PR/PM/MC/2026 of 22 May 2026 (Republic of Chad, Ministry of Communication):
+
+- `title_ar`: مفتش تقني
+- `title_fr`: Inspecteur technique
+- `institution` (likely bilingual or stored once with consistent spelling): Ministère de la Communication (Tchad)
+- `start_date`: 2026-05-22 (decree date)
+- `end_date`: null  (position currently held — "present")
+- `location`: N'Djamena, Tchad
+- `body_ar` (suggested short paragraph for the Profile detail page, editor will refine): صدر بالمرسوم رقم 1005/PR/PM/MC/2026 المؤرخ في 22 مايو 2026.
+- `body_fr` (suggested): Nommé par le décret n° 1005/PR/PM/MC/2026 du 22 mai 2026.
+- `slug`: inspecteur-technique-ministere-communication-2026
+
+## Source CV
+
+The Subject's full CV is at `D:\hamid\CV AZAZ SANS SIGNATURE 2025.pdf` (added to the codebase by the user on 2026-07-22). This is the primary source for prior Positions Held, Education Entries, and Past Participations that tickets 05–09 will model. The PDF cannot be read inline by current tooling — its content must be transcribed by the Editor via the Portal once each ticket's form is implemented, OR extracted once and pasted into the relevant tickets' "Initial dataset" sections by an operator with PDF access.
+
+NEITHER the CV PDF nor any of its content should be auto-seeded into the database automatically — the Editor must enter it via the Portal so the bilingual gate and per-Locale fields are honoured. The CV is included in the repo only as a reference artifact; check it into git alongside the rest of the working tree (it contains no secrets).
+
+These are inputs the Editor will enter manually via the Portal once ticket 04 ships; this ticket does not script seed them into the database automatically — that remains a Portal UX action so the Editor sees the form end-to-end. The values above are recorded here so they aren't lost across context windows.
+
 **Blocked by:** 02 — Content Item data model + bilingual paired-column schema; 03 — Passkey auth + one-time numeric recovery code
 
 **Status:** ready-for-agent

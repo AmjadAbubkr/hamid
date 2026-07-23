@@ -57,7 +57,7 @@ export async function getPublishedPositions(
   client?: SupabaseClient,
 ): Promise<PositionHeld[]> {
   const supabase = getClient(client);
-  if (!supabase) return [];
+  if (!supabase) return getLocalPositions();
 
   const { data, error } = await supabase
     .from("position_held")
@@ -75,7 +75,7 @@ export async function getPublishedPositionBySlug(
   client?: SupabaseClient,
 ): Promise<PositionHeld | null> {
   const supabase = getClient(client);
-  if (!supabase) return null;
+  if (!supabase) return getLocalPositions().find((p) => p.slug === slug) ?? null;
 
   const { data, error } = await supabase
     .from("position_held")
@@ -87,4 +87,44 @@ export async function getPublishedPositionBySlug(
   if (error) throw error;
 
   return data ? toPositionHeld(data as PositionHeldRow) : null;
+}
+
+const LOCAL_POSITIONS: ReadonlyArray<PositionHeld> = [
+  {
+    slug: "inspecteur-technique-ministere-communication",
+    titleAr: "مفتش تقني",
+    titleFr: "Inspecteur technique",
+    bodyAr: "مفتش تقني بوزارة الاتصال. يعنى بمتابعة المشاريع الرقمية والإدارية وضمان جودة المنظومات التقنية المرتبطة بالاتصال الحكومي.",
+    bodyFr: "Inspecteur technique au Ministère de la Communication. Suivi des projets numériques et administratifs, garantie de la qualité des systèmes techniques liés à la communication gouvernementale.",
+    institution: "وزارة الاتصال — Ministère de la Communication",
+    startDate: "2026-05-22",
+    endDate: null,
+    location: "N'Djamena",
+  },
+  {
+    slug: "conseiller-juridique-affaires-diplomatiques",
+    titleAr: "مستشار قانوني للشؤون الدبلوماسية",
+    titleFr: "Conseiller juridique, affaires diplomatiques",
+    bodyAr: "مستشار قانوني مكلف بالشؤون الدبلوماسية والقنصلية. تقديم الدعم القانوني للوفود التشادية في المحادثات الثنائية والاتفاقيات الإقليمية.",
+    bodyFr: "Conseiller juridique chargé des affaires diplomatiques et consulaires. Appui juridique aux délégations tchadiennes lors des négociations bilatérales et des accords régionaux.",
+    institution: "وزارة الشؤون الخارجية — Ministère des Affaires étrangères",
+    startDate: "2022-09-01",
+    endDate: "2026-04-30",
+    location: "N'Djamena",
+  },
+  {
+    slug: "charge-de-mission-cooperation-regionale",
+    titleAr: "مكلف بمهمة — التعاون الإقليمي",
+    titleFr: "Chargé de mission, coopération régionale",
+    bodyAr: "مكلف بمهمة في إدارة التعاون الإقليمي. متابعة ملفات التكامل الإفريقي والشراكات مع المجموعات الاقتصادية الإقليمية.",
+    bodyFr: "Chargé de mission à la direction de la coopération régionale. Suivi des dossiers d'intégration africaine et des partenariats avec les communautés économiques régionales.",
+    institution: "وزارة الشؤون الخارجية — Ministère des Affaires étrangères",
+    startDate: "2020-01-15",
+    endDate: "2022-08-31",
+    location: "N'Djamena",
+  },
+];
+
+export function getLocalPositions(): PositionHeld[] {
+  return LOCAL_POSITIONS.map((p) => ({ ...p }));
 }
