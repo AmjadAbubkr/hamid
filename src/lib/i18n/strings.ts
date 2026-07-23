@@ -12,7 +12,7 @@ export type LocalizedStrings = {
 
 export const STRINGS: Record<LocaleCode, LocalizedStrings> = {
   ar: {
-    siteHeading: "حميد — الملف الشخصي الرسمي",
+    siteHeading: "حامد — الملف الشخصي الرسمي",
     siteTagline: "دبلوماسي وسياسي تشادي. الملف الشخصي العام الرسمي.",
     title: "البطاقة التجريبية",
     body: "هذه بطاقة تجريبية للتدليل على تبديل اتجاه الكتابة بين العربية والفرنسية.",

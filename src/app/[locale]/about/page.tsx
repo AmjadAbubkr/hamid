@@ -43,7 +43,7 @@ const ABOUT_COPY: Record<LocaleCode, {
     noPositions: "لا توجد مناصب منشورة بعد.",
     noEducation: "لا توجد دراسات منشورة بعد.",
     noParticipations: "لا توجد مشاركات منشورة بعد.",
-    portraitAlt: "صورة حميد",
+    portraitAlt: "صورة حامد",
   },
   fr: {
     heading: "À propos",

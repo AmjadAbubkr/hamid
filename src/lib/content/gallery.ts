@@ -68,7 +68,7 @@ const LOCAL_GALLERY_PHOTOS: ReadonlyArray<GalleryPhoto> = [
   {
     id: "local-hamid-minister",
     storagePath: "/imgs/hamid-minister.jpg",
-    captionAr: "حميد مع الوزير",
+    captionAr: "حامد مع الوزير",
     captionFr: "Hamid avec le ministre",
     takenDate: "2024-01-01",
     photographerCreditAr: null,

@@ -35,7 +35,7 @@ export async function generateMetadata({
     title: `Hamid — ${meta.name}`,
     description:
       locale === "ar"
-        ? "حميد — الملف الشخصي الرسمي"
+        ? "حامد — الملف الشخصي الرسمي"
         : "Hamid — profil officiel",
   };
 }

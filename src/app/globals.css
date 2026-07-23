@@ -49,3 +49,32 @@ body {
     transition-property: none;
   }
 }
+
+.mobile-nav-panel {
+  overflow: hidden;
+  background: #ffffff;
+  border-bottom: 1px solid #c5c6ce;
+  transform-origin: top right;
+  opacity: 1;
+  transform: scaleY(1);
+  transition: opacity 200ms ease-out, transform 200ms ease-out;
+}
+
+[dir="rtl"] .mobile-nav-panel {
+  transform-origin: top left;
+}
+
+.mobile-nav-panel:not([data-open]) {
+  opacity: 0;
+  transform: scaleY(0.97);
+  height: 0;
+  border-bottom-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-nav-panel,
+  .mobile-nav-panel:not([data-open]) {
+    transition-property: opacity;
+    transform: none;
+  }
+}
