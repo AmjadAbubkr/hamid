@@ -76,7 +76,16 @@ export function GalleryGrid({
                 className="group relative block h-full w-full overflow-hidden rounded border-line bg-surface text-start shadow-[var(--shadow-ambient)] transition-[transform,box-shadow] duration-300 ease-[var(--ease-soft)] hover:-translate-y-1 hover:shadow-[var(--shadow-ambient-hover)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"
                 aria-label={photo.caption}
               >
-                <span className="relative block w-full overflow-hidden">
+                {/*
+                  Sizing lives on the wrapper span, not on the <Image>. With
+                  next/image `fill`, the rendered <img> is absolutely
+                  positioned and ignores any aspect/w-full set on the Image
+                  itself — the previous code put `aspect-[4/3] w-full` on the
+                  Image and gave the span no height, so the span collapsed to
+                  zero and the photos rendered shrunken. The wrapper now owns
+                  the aspect ratio; `fill` paints the photo across it.
+                */}
+                <span className="relative block aspect-[4/3] w-full overflow-hidden sm:aspect-[16/10]">
                   <Image
                     src={photo.src}
                     alt={photo.caption}
@@ -86,11 +95,7 @@ export function GalleryGrid({
                         ? "(min-width: 1024px) 66vw, (min-width: 640px) 100vw, 100vw"
                         : "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                     }
-                    className={
-                      lead
-                        ? "aspect-[4/3] w-full object-cover transition-transform duration-[800ms] ease-[var(--ease-soft)] group-hover:scale-[1.05]"
-                        : "aspect-[4/3] w-full object-cover transition-transform duration-[800ms] ease-[var(--ease-soft)] group-hover:scale-[1.05]"
-                    }
+                    className="object-cover transition-transform duration-[800ms] ease-[var(--ease-soft)] group-hover:scale-[1.05]"
                   />
                 </span>
                 <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-navy/85 via-navy/0 to-transparent opacity-90 transition-opacity duration-500 group-hover:opacity-100" />

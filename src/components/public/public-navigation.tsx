@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ProfileIcon, type ProfileIconName } from "@/components/profile-icons";
 import { LocaleSwitcher } from "@/components/public/locale-switcher";
+import { SocialLinks } from "@/components/public/social-links";
 import { textFor, type LocaleCode } from "@/lib/i18n/locales";
 
 type PublicNavigationProps = {
@@ -195,6 +196,16 @@ export function PublicNavigation({ locale }: PublicNavigationProps) {
                 </li>
               );
             })}
+            <li className="mt-2 flex items-center justify-between border-t border-line pt-4">
+              <span className="px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-gold">
+                {textFor(locale, {
+                  ar: "تابع",
+                  fr: "Suivre",
+                  en: "Follow",
+                })}
+              </span>
+              <SocialLinks locale={locale} variant="nav" />
+            </li>
           </ul>
         </nav>
         <div className="border-t border-line px-6 py-4">

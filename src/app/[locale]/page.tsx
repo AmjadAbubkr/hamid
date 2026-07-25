@@ -8,6 +8,7 @@ import { ProfileIcon } from "@/components/profile-icons";
 import { ArticleCard, EventRow, FactCard } from "@/components/public/cards";
 import { EmptyState } from "@/components/public/empty-state";
 import { SectionHeading } from "@/components/public/section-heading";
+import { SocialLinks } from "@/components/public/social-links";
 import { TimelineMini } from "@/components/public/timeline";
 import { galleryPublicUrl, getPublishedGalleryPhotos } from "@/lib/content/gallery";
 import { getPublishedArticles } from "@/lib/content/articles";
@@ -191,6 +192,8 @@ export default async function LocalePage({ params }: Params) {
               <p className="max-w-md text-pretty text-xl leading-relaxed text-white/90">
                 {aboutParagraph}
               </p>
+
+              <SocialLinks locale={locale} variant="hero" />
 
               <dl className="mt-2 flex flex-col gap-2 border-t border-white/20 pt-6 sm:flex-row sm:items-end sm:gap-10">
                 <div className="flex flex-col gap-1">
@@ -386,41 +389,40 @@ export default async function LocalePage({ params }: Params) {
             />
             {galleryPreview.length ? (
               <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {galleryPreview.map((photo, index) => (
-                  <li
-                    key={photo.id}
-                    className={
-                      index === 0
-                        ? "sm:col-span-2 sm:row-span-2 lg:col-span-2 lg:row-span-2"
-                        : ""
-                    }
-                  >
-                    <Link
-                      href={`/${locale}/gallery`}
-                      className="group relative block h-full w-full overflow-hidden rounded border border-line bg-surface shadow-[var(--shadow-ambient)]"
+                {galleryPreview.map((photo, index) => {
+                  const lead = index === 0;
+                  return (
+                    <li
+                      key={photo.id}
+                      className={
+                        lead
+                          ? "aspect-[4/3] sm:col-span-2 sm:row-span-2 lg:col-span-2 lg:row-span-2"
+                          : "aspect-square sm:aspect-[4/3] lg:aspect-square"
+                      }
                     >
-                      <Image
-                        src={photo.src}
-                        alt={photo.caption || ""}
-                        fill
-                        sizes={
-                          index === 0
-                            ? "(min-width: 1024px) 50vw, 100vw"
-                            : "(min-width: 640px) 25vw, 100vw"
-                        }
-                        className={
-                          index === 0
-                            ? "object-cover transition-transform duration-700 ease-[var(--ease-soft)] group-hover:scale-[1.04]"
-                            : "object-cover transition-transform duration-700 ease-[var(--ease-soft)] group-hover:scale-[1.04]"
-                        }
-                      />
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-navy/80 via-navy/0 to-transparent opacity-90 transition-opacity duration-500 group-hover:opacity-100" />
-                      <p className="absolute inset-x-0 bottom-0 p-5 text-pretty text-sm font-medium text-white">
-                        {photo.caption}
-                      </p>
-                    </Link>
-                  </li>
-                ))}
+                      <Link
+                        href={`/${locale}/gallery`}
+                        className="group relative block h-full w-full overflow-hidden rounded border border-line bg-surface shadow-[var(--shadow-ambient)]"
+                      >
+                        <Image
+                          src={photo.src}
+                          alt={photo.caption || ""}
+                          fill
+                          sizes={
+                            lead
+                              ? "(min-width: 1024px) 50vw, 100vw"
+                              : "(min-width: 640px) 25vw, 100vw"
+                          }
+                          className="object-cover transition-transform duration-700 ease-[var(--ease-soft)] group-hover:scale-[1.04]"
+                        />
+                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-navy/80 via-navy/0 to-transparent opacity-90 transition-opacity duration-500 group-hover:opacity-100" />
+                        <p className="absolute inset-x-0 bottom-0 p-5 text-pretty text-sm font-medium text-white">
+                          {photo.caption}
+                        </p>
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <div className="mt-10">

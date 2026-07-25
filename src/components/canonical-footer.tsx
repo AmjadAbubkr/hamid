@@ -1,4 +1,5 @@
 import { textFor, type LocaleCode } from "@/lib/i18n/locales";
+import { SocialLinks } from "@/components/public/social-links";
 
 type CanonicalFooterProps = {
   pathname: string;
@@ -10,6 +11,14 @@ function getSiteOrigin() {
   return new URL(siteUrl).origin;
 }
 
+function isLocalhostOrigin(origin: string) {
+  return (
+    origin === "http://localhost:3000" ||
+    origin === "http://127.0.0.1:3000" ||
+    origin === "http://localhost:3000/"
+  );
+}
+
 /*
   CanonicalFooter — a quiet institutional footer that anchors the page with a
   hairline divider, the canonical URL of the current page (kept for SEO and so
@@ -18,12 +27,9 @@ function getSiteOrigin() {
   bottom of a foreign-ministry page.
 */
 export function CanonicalFooter({ pathname, locale }: CanonicalFooterProps) {
-  const canonical = new URL(pathname, getSiteOrigin()).toString();
-  const nameLine = textFor(locale, {
-    ar: "حامد محمد أزاز",
-    fr: "Hamid Mahamat Azaz",
-    en: "Hamid Mahamat Azaz",
-  });
+  const origin = getSiteOrigin();
+  const canonical = new URL(pathname, origin).toString();
+  const showCanonical = !isLocalhostOrigin(origin);
   const roleLine = textFor(locale, {
     ar: "دبلوماسي وسياسي تشادي — الملف الشخصي الرسمي",
     fr: "Diplomate et homme politique tchadien — Profil public officiel",
@@ -43,17 +49,36 @@ export function CanonicalFooter({ pathname, locale }: CanonicalFooterProps) {
       <div className="flex flex-col gap-3 text-start sm:flex-row sm:items-end sm:justify-between sm:gap-6">
         <div className="flex flex-col gap-1">
           <p className="font-serif text-base font-semibold text-ink">
-            {nameLine}
+            {textFor(locale, {
+              ar: (
+                <>
+                  حامد محمد <span className="uppercase text-gold">Azaz</span>
+                </>
+              ),
+              fr: (
+                <>
+                  Hamid Mahamat <span className="uppercase text-gold">Azaz</span>
+                </>
+              ),
+              en: (
+                <>
+                  Hamid Mahamat <span className="uppercase text-gold">Azaz</span>
+                </>
+              ),
+            })}
           </p>
           <p className="text-sm text-ink-600">
             {roleLine}
           </p>
+          <SocialLinks locale={locale} variant="footer" />
         </div>
         <div className="flex flex-col gap-1 text-start sm:text-end">
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gold">
             {officialDocLine}
           </p>
-          <p className="font-mono text-xs text-ink-600 break-all">{canonical}</p>
+          {showCanonical ? (
+            <p className="font-mono text-xs text-ink-600 break-all">{canonical}</p>
+          ) : null}
         </div>
       </div>
     </footer>
