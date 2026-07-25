@@ -209,7 +209,9 @@ export function PublicNavigation({ locale }: PublicNavigationProps) {
           </ul>
         </nav>
         <div className="border-t border-line px-6 py-4">
-          <LocaleSwitcher locale={locale} />
+          <div style={{ width: "112px" }}>
+            <LocaleSwitcher locale={locale} />
+          </div>
         </div>
       </div>
     </header>
