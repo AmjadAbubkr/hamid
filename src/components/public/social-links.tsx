@@ -3,6 +3,8 @@ import { textFor, type LocaleCode } from "@/lib/i18n/locales";
 export const SOCIAL_LINKS = {
   linkedin: "https://td.linkedin.com/in/hamid-mahamat-azaz-a9642517a",
   facebook: "https://www.facebook.com/hamid.azaz/",
+  instagram: "https://www.instagram.com/hamid_azaz_officiel?utm_source=qr&igsh=ZGExNmxtYnN2Zm1l",
+  x: "https://x.com/HamidAzaz1",
 } as const;
 
 type SocialLinksProps = {
@@ -46,6 +48,16 @@ const SOCIAL_ARIA: Record<keyof typeof SOCIAL_LINKS, Record<LocaleCode, string>>
     fr: "Hamid Mahamat Azaz sur Facebook",
     en: "Hamid Mahamat Azaz on Facebook",
   },
+  instagram: {
+    ar: "حامد محمد عزاز على إنستجرام",
+    fr: "Hamid Mahamat Azaz sur Instagram",
+    en: "Hamid Mahamat Azaz on Instagram",
+  },
+  x: {
+    ar: "حامد محمد عزاز على إكس",
+    fr: "Hamid Mahamat Azaz sur X",
+    en: "Hamid Mahamat Azaz on X",
+  },
 };
 
 function LinkedinIcon({ className }: { className: string }) {
@@ -70,6 +82,32 @@ function FacebookIcon({ className }: { className: string }) {
       className={className}
     >
       <path d="M24 12.07C24 5.41 18.63 0 12 0S0 5.4 0 12.07c0 6.02 4.39 11.01 10.13 11.93v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.69.24 2.69.24v2.97h-1.52c-1.49 0-1.96.93-1.96 1.89v2.25h3.33l-.53 3.49h-2.8v8.44C19.6 23.08 24 18.09 24 12.07" />
+    </svg>
+  );
+}
+
+function InstagramIcon({ className }: { className: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M12 0C5.37 0 0 5.37 0 12c0 6.63 5.37 12 12 12s12-5.37 12-12S18.63 0 12 0m5.52 8.06h-.76c-.05-.01-.1-.01-.15-.01-1.23 0-2.23 1-2.23 2.23v.76h2.99l-.44 2.99h-2.55v7.7h-3.1v-7.7H9.5v-2.99h1.78v-.63c0-1.76.85-2.79 2.72-2.79.77 0 1.44.06 1.63.08v1.89z" />
+    </svg>
+  );
+}
+
+function XIcon({ className }: { className: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.338-6.996-6.113 6.996H1.674l7.732-8.835L1.249 2.25H8.08l4.713 6.231 5.45-6.231zM17.002 18.807h1.83L6.075 3.957H4.146l12.856 14.85z" />
     </svg>
   );
 }
@@ -99,6 +137,28 @@ export function SocialLinks({ locale, variant }: SocialLinksProps) {
           className={styles.itemClassName}
         >
           <FacebookIcon className={styles.iconClassName} />
+        </a>
+      </li>
+      <li>
+        <a
+          href={SOCIAL_LINKS.instagram}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={textFor(locale, SOCIAL_ARIA.instagram)}
+          className={styles.itemClassName}
+        >
+          <InstagramIcon className={styles.iconClassName} />
+        </a>
+      </li>
+      <li>
+        <a
+          href={SOCIAL_LINKS.x}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={textFor(locale, SOCIAL_ARIA.x)}
+          className={styles.itemClassName}
+        >
+          <XIcon className={styles.iconClassName} />
         </a>
       </li>
     </ul>
