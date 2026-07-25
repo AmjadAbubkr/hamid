@@ -38,21 +38,21 @@ type CommonProps = {
   variant?: Variant;
   size?: Size;
   className?: string;
-  children: ReactNode;
+  children?: ReactNode;
 };
 
 export function PrimaryButton({
   className,
   ...rest
 }: ComponentPropsWithoutRef<"button"> & { className?: string }) {
-  return <Button as="button" variant="primary" className={className} {...rest} />;
+  return <Button variant="primary" className={className} {...rest} />;
 }
 
 export function SecondaryButton({
   className,
   ...rest
 }: ComponentPropsWithoutRef<"button"> & { className?: string }) {
-  return <Button as="button" variant="secondary" className={className} {...rest} />;
+  return <Button variant="secondary" className={className} {...rest} />;
 }
 
 export function ButtonLink({
