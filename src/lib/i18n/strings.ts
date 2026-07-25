@@ -29,4 +29,13 @@ export const STRINGS: Record<LocaleCode, LocalizedStrings> = {
     switchPrompt: "Basculer vers la version arabe",
     localeName: "Français",
   },
+  en: {
+    siteHeading: "Hamid — Official profile",
+    siteTagline: "Chadian diplomat and politician. The official public profile.",
+    title: "Demo card",
+    body: "This is a demonstration card showing the direction switching between Arabic, French, and English.",
+    body2: "Direction is handled via the dir attribute on the html element, without any conditional classes.",
+    switchPrompt: "Switch to the Arabic version",
+    localeName: "English",
+  },
 };

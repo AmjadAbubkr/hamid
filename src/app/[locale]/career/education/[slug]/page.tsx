@@ -74,7 +74,7 @@ export default async function EducationDetailPage({
           ) : null}
         </article>
       </main>
-      <CanonicalFooter pathname={`/${locale}/career/education/${entry.slug}`} />
+      <CanonicalFooter pathname={`/${locale}/career/education/${entry.slug}`} locale={locale} />
     </>
   );
 }

@@ -37,6 +37,15 @@ describe("LocaleDocumentDirector", () => {
     cleanup();
   });
 
+  it("sets <html dir='ltr' lang='en'> when the pathname is /en", () => {
+    pathnameMock.mockReturnValue("/en");
+    render(<LocaleDocumentDirector />);
+    const html = document.documentElement;
+    expect(html.getAttribute("dir")).toBe(LOCALE_META.en.dir);
+    expect(html.getAttribute("lang")).toBe(LOCALE_META.en.htmlLang);
+    cleanup();
+  });
+
   it("falls back to the default Locale (ar → rtl) when the pathname has no Locale segment", () => {
     pathnameMock.mockReturnValue("/");
     render(<LocaleDocumentDirector />);
@@ -47,7 +56,7 @@ describe("LocaleDocumentDirector", () => {
   });
 
   it("falls back to the default Locale when the path segment is an unknown Locale", () => {
-    pathnameMock.mockReturnValue("/en/something");
+    pathnameMock.mockReturnValue("/xx/something");
     render(<LocaleDocumentDirector />);
     const html = document.documentElement;
     expect(html.getAttribute("dir")).toBe("rtl");

@@ -18,7 +18,7 @@ describe("CanonicalFooter", () => {
     process.env.NEXT_PUBLIC_SITE_URL = "https://hamid.example/";
 
     render(
-      <CanonicalFooter pathname="/fr/career/inspecteur-technique" />,
+      <CanonicalFooter pathname="/fr/career/inspecteur-technique" locale="fr" />,
     );
 
     expect(screen.getByTestId("canonical-footer")).toHaveTextContent(

@@ -9,36 +9,46 @@ export type UpcomingEvent = {
   slug: string;
   titleAr: string;
   titleFr: string;
+  titleEn: string | null;
   bodyAr: string | null;
   bodyFr: string | null;
+  bodyEn: string | null;
   eventDate: string;
   venueAr: string;
   venueFr: string;
+  venueEn: string | null;
   institutionAr: string;
   institutionFr: string;
+  institutionEn: string | null;
   role: ParticipationRole;
   roleOtherAr: string | null;
   roleOtherFr: string | null;
+  roleOtherEn: string | null;
   registrationUrl: string | null;
 };
 
 const EVENT_FIELDS =
-  "slug,title_ar,title_fr,body_ar,body_fr,event_date,venue_ar,venue_fr,institution_ar,institution_fr,role,role_other_ar,role_other_fr,registration_url";
+  "slug,title_ar,title_fr,title_en,body_ar,body_fr,body_en,event_date,venue_ar,venue_fr,venue_en,institution_ar,institution_fr,institution_en,role,role_other_ar,role_other_fr,role_other_en,registration_url";
 
 type UpcomingEventRow = {
   slug: string;
   title_ar: string;
   title_fr: string;
+  title_en: string | null;
   body_ar: string | null;
   body_fr: string | null;
+  body_en: string | null;
   event_date: string;
   venue_ar: string;
   venue_fr: string;
+  venue_en: string | null;
   institution_ar: string;
   institution_fr: string;
+  institution_en: string | null;
   role: ParticipationRole;
   role_other_ar: string | null;
   role_other_fr: string | null;
+  role_other_en: string | null;
   registration_url: string | null;
 };
 
@@ -47,16 +57,21 @@ function toUpcomingEvent(row: UpcomingEventRow): UpcomingEvent {
     slug: row.slug,
     titleAr: row.title_ar,
     titleFr: row.title_fr,
+    titleEn: row.title_en,
     bodyAr: row.body_ar,
     bodyFr: row.body_fr,
+    bodyEn: row.body_en,
     eventDate: row.event_date,
     venueAr: row.venue_ar,
     venueFr: row.venue_fr,
+    venueEn: row.venue_en,
     institutionAr: row.institution_ar,
     institutionFr: row.institution_fr,
+    institutionEn: row.institution_en,
     role: row.role,
     roleOtherAr: row.role_other_ar,
     roleOtherFr: row.role_other_fr,
+    roleOtherEn: row.role_other_en,
     registrationUrl: row.registration_url,
   };
 }

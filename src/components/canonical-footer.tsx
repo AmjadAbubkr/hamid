@@ -1,5 +1,8 @@
+import { textFor, type LocaleCode } from "@/lib/i18n/locales";
+
 type CanonicalFooterProps = {
   pathname: string;
+  locale: LocaleCode;
 };
 
 function getSiteOrigin() {
@@ -14,8 +17,23 @@ function getSiteOrigin() {
   the original dev-looking <code> block into something that reads as the
   bottom of a foreign-ministry page.
 */
-export function CanonicalFooter({ pathname }: CanonicalFooterProps) {
+export function CanonicalFooter({ pathname, locale }: CanonicalFooterProps) {
   const canonical = new URL(pathname, getSiteOrigin()).toString();
+  const nameLine = textFor(locale, {
+    ar: "حامد محمد أزاز",
+    fr: "Hamid Mahamat Azaz",
+    en: "Hamid Mahamat Azaz",
+  });
+  const roleLine = textFor(locale, {
+    ar: "دبلوماسي وسياسي تشادي — الملف الشخصي الرسمي",
+    fr: "Diplomate et homme politique tchadien — Profil public officiel",
+    en: "Chadian diplomat and politician — Official public profile",
+  });
+  const officialDocLine = textFor(locale, {
+    ar: "وثيقة رسمية",
+    fr: "Document officiel",
+    en: "Official document",
+  });
 
   return (
     <footer
@@ -25,15 +43,15 @@ export function CanonicalFooter({ pathname }: CanonicalFooterProps) {
       <div className="flex flex-col gap-3 text-start sm:flex-row sm:items-end sm:justify-between sm:gap-6">
         <div className="flex flex-col gap-1">
           <p className="font-serif text-base font-semibold text-ink">
-            Hamid Mahamat Azaz
+            {nameLine}
           </p>
           <p className="text-sm text-ink-600">
-            Diplomate et homme politique tchadien — Profil public officiel
+            {roleLine}
           </p>
         </div>
         <div className="flex flex-col gap-1 text-start sm:text-end">
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gold">
-            Document officiel
+            {officialDocLine}
           </p>
           <p className="font-mono text-xs text-ink-600 break-all">{canonical}</p>
         </div>

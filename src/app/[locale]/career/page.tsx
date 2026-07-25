@@ -60,6 +60,7 @@ function participationText(entry: PastParticipation, locale: LocaleCode) {
       locale,
       entry.roleOtherAr,
       entry.roleOtherFr,
+      entry.roleOtherEn,
     ),
   };
 }
@@ -239,7 +240,7 @@ export default async function CareerPage({ params }: CareerPageProps) {
           </section>
         </MotionReveal>
       </main>
-      <CanonicalFooter pathname={`/${locale}/career`} />
+      <CanonicalFooter pathname={`/${locale}/career`} locale={locale} />
     </>
   );
 }

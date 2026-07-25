@@ -21,9 +21,13 @@ export type GalleryGridPhoto = {
 export function GalleryGrid({
   photos,
   emptyLabel,
+  closeLabel = "Close",
+  galleryAriaLabel = "Gallery",
 }: {
   photos: GalleryGridPhoto[];
   emptyLabel: string;
+  closeLabel?: string;
+  galleryAriaLabel?: string;
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const selected = selectedIndex === null ? null : photos[selectedIndex];
@@ -54,7 +58,7 @@ export function GalleryGrid({
   return (
     <>
       <ul
-        aria-label="Gallery"
+        aria-label={galleryAriaLabel}
         className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
       >
         {photos.map((photo, index) => {
@@ -129,7 +133,7 @@ export function GalleryGrid({
                 onClick={() => setSelectedIndex(null)}
                 className="rounded border border-gold px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-gold-200/15"
               >
-                Close
+                {closeLabel}
               </button>
             </div>
             <div className="bg-surface-low p-4 sm:p-6">

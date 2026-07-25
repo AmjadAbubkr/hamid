@@ -45,6 +45,7 @@ export default async function ParticipationDetailPage({
     locale,
     participation.roleOtherAr,
     participation.roleOtherFr,
+    participation.roleOtherEn,
   );
   const sourceUrl = safeHttpUrl(participation.sourceUrl);
 
@@ -91,7 +92,7 @@ export default async function ParticipationDetailPage({
           ) : null}
         </article>
       </main>
-      <CanonicalFooter pathname={`/${locale}/participations/${participation.slug}`} />
+      <CanonicalFooter pathname={`/${locale}/participations/${participation.slug}`} locale={locale} />
     </>
   );
 }

@@ -7,11 +7,13 @@ import {
 export type Tagline = {
   textAr: string;
   textFr: string;
+  textEn: string | null;
 };
 
 type TaglineRow = {
   tagline_ar: string;
   tagline_fr: string;
+  tagline_en: string | null;
 };
 
 function getClient(client?: SupabaseClient) {
@@ -25,7 +27,7 @@ export async function getPublishedTagline(client?: SupabaseClient): Promise<Tagl
 
   const { data, error } = await supabase
     .from("tagline")
-    .select("tagline_ar,tagline_fr")
+    .select("tagline_ar,tagline_fr,tagline_en")
     .eq("status", "published")
     .maybeSingle();
 
@@ -33,5 +35,5 @@ export async function getPublishedTagline(client?: SupabaseClient): Promise<Tagl
   if (!data) return null;
 
   const row = data as TaglineRow;
-  return { textAr: row.tagline_ar, textFr: row.tagline_fr };
+  return { textAr: row.tagline_ar, textFr: row.tagline_fr, textEn: row.tagline_en };
 }

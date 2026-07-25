@@ -73,7 +73,7 @@ export default async function PositionDetailPage({
           {body ? <p className="leading-relaxed text-zinc-700">{body}</p> : null}
         </article>
       </main>
-      <CanonicalFooter pathname={`/${locale}/career/${position.slug}`} />
+      <CanonicalFooter pathname={`/${locale}/career/${position.slug}`} locale={locale} />
     </>
   );
 }

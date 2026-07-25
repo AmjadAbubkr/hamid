@@ -3,7 +3,7 @@ import { CanonicalFooter } from "@/components/canonical-footer";
 import { GalleryGrid, type GalleryGridPhoto } from "@/components/gallery-grid";
 import { MotionReveal, PageEntrance } from "@/components/motion-reveal";
 import { galleryPublicUrl, getPublishedGalleryPhotos } from "@/lib/content/gallery";
-import { isLocaleCode, type LocaleCode } from "@/lib/i18n/locales";
+import { isLocaleCode, textFor, localizedField, type LocaleCode } from "@/lib/i18n/locales";
 
 type GalleryPageProps = {
   params: Promise<{ locale: string }>;
@@ -22,19 +22,43 @@ export default async function GalleryPage({ params }: GalleryPageProps) {
     return [{
       id: photo.id,
       src,
-      caption: locale === "ar" ? photo.captionAr : photo.captionFr,
-      category: locale === "ar" ? photo.categoryAr : photo.categoryFr,
+      caption: localizedField(locale, photo.captionAr, photo.captionFr, photo.captionEn),
+      category: localizedField(locale, photo.categoryAr, photo.categoryFr, photo.categoryEn),
       takenDate: photo.takenDate,
-      photographerCredit: locale === "ar" ? photo.photographerCreditAr : photo.photographerCreditFr,
+      photographerCredit: localizedField(locale, photo.photographerCreditAr, photo.photographerCreditFr, photo.photographerCreditEn),
     }];
   });
 
-  const headingText = locale === "ar" ? "المعرض" : "Galerie";
-  const eyebrow = locale === "ar" ? "لقطات رسمية" : "Moments documentés";
-  const intro =
-    locale === "ar"
-      ? "صور رسمية وتوثيقية من المهام الرسمية لحامد."
-      : "Photographies officielles et documentaires des missions publiques de Hamid.";
+  const headingText = textFor(locale, {
+    ar: "المعرض",
+    fr: "Galerie",
+    en: "Gallery",
+  });
+  const eyebrow = textFor(locale, {
+    ar: "لقطات رسمية",
+    fr: "Moments documentés",
+    en: "Documented moments",
+  });
+  const intro = textFor(locale, {
+    ar: "صور رسمية وتوثيقية من المهام الرسمية لحامد.",
+    fr: "Photographies officielles et documentaires des missions publiques de Hamid.",
+    en: "Official and documentary photographs from Hamid's public missions.",
+  });
+  const emptyLabel = textFor(locale, {
+    ar: "لا توجد صور منشورة بعد.",
+    fr: "Aucune photo publiée pour le moment.",
+    en: "No published photos yet.",
+  });
+  const galleryAriaLabel = textFor(locale, {
+    ar: "المعرض",
+    fr: "Galerie",
+    en: "Gallery",
+  });
+  const closeLabel = textFor(locale, {
+    ar: "إغلاق",
+    fr: "Fermer",
+    en: "Close",
+  });
 
   return (
     <>
@@ -55,11 +79,13 @@ export default async function GalleryPage({ params }: GalleryPageProps) {
         <MotionReveal delay={100}>
           <GalleryGrid
             photos={photos}
-            emptyLabel={locale === "ar" ? "لا توجد صور منشورة بعد." : "Aucune photo publiée pour le moment."}
+            emptyLabel={emptyLabel}
+            galleryAriaLabel={galleryAriaLabel}
+            closeLabel={closeLabel}
           />
         </MotionReveal>
       </main>
-      <CanonicalFooter pathname={`/${locale}/gallery`} />
+      <CanonicalFooter pathname={`/${locale}/gallery`} locale={locale} />
     </>
   );
 }

@@ -90,9 +90,17 @@ describe("LocalePage (src/app/[locale]/page.tsx)", () => {
     expect(notFoundMock).not.toHaveBeenCalled();
   });
 
-  it("calls notFound() for an unknown Locale code (en)", async () => {
+  it("renders the English Locale home page with the official current-role fallback", async () => {
+    const ui = await LocalePage({ params: makeParams("en") });
+    render(ui);
+    expect(screen.getByText("Technical Inspector")).toBeInTheDocument();
+    expect(screen.getByText("Ministry of Communication")).toBeInTheDocument();
+    expect(notFoundMock).not.toHaveBeenCalled();
+  });
+
+  it("calls notFound() for an unknown Locale code (xx)", async () => {
     await expect(
-      LocalePage({ params: makeParams("en") }),
+      LocalePage({ params: makeParams("xx") }),
     ).rejects.toThrow("__NEXT_NOT_FOUND__");
     expect(notFoundMock).toHaveBeenCalledTimes(1);
   });

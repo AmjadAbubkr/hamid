@@ -12,7 +12,7 @@ import { getPublishedEducationEntries } from "@/lib/content/education";
 import { getPublishedPastParticipations } from "@/lib/content/participations";
 import { getPublishedPositions } from "@/lib/content/positions";
 import { getPublishedTagline } from "@/lib/content/tagline";
-import { isLocaleCode, type LocaleCode } from "@/lib/i18n/locales";
+import { isLocaleCode, textFor, localizedField, intlLocaleFor, type LocaleCode } from "@/lib/i18n/locales";
 
 type AboutPageProps = {
   params: Promise<{ locale: string }>;
@@ -63,10 +63,25 @@ const ABOUT_COPY: Record<LocaleCode, {
     noParticipations: "Aucune participation publiée pour le moment.",
     portraitAlt: "Portrait de Hamid",
   },
+  en: {
+    heading: "About",
+    currentPosition: "Current role",
+    positions: "Posts held",
+    education: "Education",
+    participations: "Past participations",
+    present: "Present",
+    viewCareer: "View full career",
+    viewParticipation: "View details",
+    noCurrentPosition: "No current role published yet.",
+    noPositions: "No posts published yet.",
+    noEducation: "No education entries published yet.",
+    noParticipations: "No participations published yet.",
+    portraitAlt: "Portrait of Hamid",
+  },
 };
 
 function formatDate(date: string, locale: LocaleCode) {
-  return new Intl.DateTimeFormat(locale === "ar" ? "ar-TD" : "fr-TD", {
+  return new Intl.DateTimeFormat(intlLocaleFor(locale), {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -74,8 +89,17 @@ function formatDate(date: string, locale: LocaleCode) {
   }).format(new Date(`${date}T00:00:00Z`));
 }
 
-function textFor(locale: LocaleCode, values: { ar: string | null; fr: string | null }) {
-  return locale === "ar" ? values.ar : values.fr;
+/*
+  localTextFor — wrapper around the shared `localizedField` so callers in this
+  page can pass a {ar, fr, en} bag of possibly-null strings (tagline text,
+  position body, etc.) and get back the localized string with the empty-English
+  fallback baked in.
+*/
+function localTextFor(
+  locale: LocaleCode,
+  values: { ar: string | null; fr: string | null; en: string | null },
+): string | null {
+  return localizedField(locale, values.ar, values.fr, values.en);
 }
 
 function siteOrigin() {
@@ -95,6 +119,7 @@ export async function generateMetadata({ params }: AboutPageProps): Promise<Meta
       languages: {
         ar: "/ar/about",
         fr: "/fr/about",
+        en: "/en/about",
       },
     },
   };
@@ -120,8 +145,8 @@ export default async function AboutPage({ params }: AboutPageProps) {
   // for stronger hierarchy; both renderings are intentional.
   const timelinePositions = positions;
   const visibleParticipations = participations.slice(0, 3);
-  const taglineText = tagline ? textFor(locale, { ar: tagline.textAr, fr: tagline.textFr }) : null;
-  const presentBadge = locale === "ar" ? "حتى الآن" : "En cours";
+  const taglineText = tagline ? localTextFor(locale, { ar: tagline.textAr, fr: tagline.textFr, en: tagline.textEn }) : null;
+  const presentBadge = textFor(locale, { ar: "حتى الآن", fr: "En cours", en: "Present" });
 
   return (
     <>
@@ -155,7 +180,7 @@ export default async function AboutPage({ params }: AboutPageProps) {
         <MotionReveal delay={60}>
           <SectionHeading
             id="about-current-position"
-              eyebrow={locale === "ar" ? "المناصب الحالية" : "Actuellement"}
+              eyebrow={textFor(locale, { ar: "المناصب الحالية", fr: "Actuellement", en: "Currently" })}
             icon="briefcase"
             title={copy.currentPosition}
           />
@@ -170,7 +195,7 @@ export default async function AboutPage({ params }: AboutPageProps) {
                     href={`/${locale}/career/${currentPosition.slug}`}
                     className="rounded-s-sm rounded-e-sm underline decoration-gold-300 decoration-2 underline-offset-4"
                   >
-                    {locale === "ar" ? currentPosition.titleAr : currentPosition.titleFr}
+                    {localizedField(locale, currentPosition.titleAr, currentPosition.titleFr, currentPosition.titleEn)}
                   </Link>
                 </h2>
                 <p className="font-serif text-lg font-semibold text-ink">
@@ -182,9 +207,11 @@ export default async function AboutPage({ params }: AboutPageProps) {
               <EmptyState
                 icon="briefcase"
                 heading={
-                    locale === "ar"
-                      ? "لا توجد مناصب حالية منشورة"
-                      : "Aucune fonction actuelle publiée"
+                  textFor(locale, {
+                    ar: "لا توجد مناصب حالية منشورة",
+                    fr: "Aucune fonction actuelle publiée",
+                    en: "No current role published",
+                  })
                 }
                 body={copy.noCurrentPosition}
               />
@@ -197,7 +224,7 @@ export default async function AboutPage({ params }: AboutPageProps) {
             <SectionHeading
               id="about-positions"
               icon="briefcase"
-              eyebrow={locale === "ar" ? "المناصب السابقة" : "Parcours"}
+              eyebrow={textFor(locale, { ar: "المناصب السابقة", fr: "Parcours", en: "Career" })}
               title={copy.positions}
               action={{ href: `/${locale}/career`, label: copy.viewCareer }}
             />
@@ -212,7 +239,7 @@ export default async function AboutPage({ params }: AboutPageProps) {
                           ? formatDate(position.endDate, locale)
                           : copy.present
                       }`}
-                      title={locale === "ar" ? position.titleAr : position.titleFr}
+                      title={localizedField(locale, position.titleAr, position.titleFr, position.titleEn)}
                       titleHref={`/${locale}/career/${position.slug}` as const}
                       meta={
                         <>
@@ -231,7 +258,11 @@ export default async function AboutPage({ params }: AboutPageProps) {
                 <EmptyState
                   icon="briefcase"
                   heading={
-                    locale === "ar" ? "لا توجد مناصب منشورة" : "Aucun poste publié"
+                    textFor(locale, {
+                      ar: "لا توجد مناصب منشورة",
+                      fr: "Aucun poste publié",
+                      en: "No posts published",
+                    })
                   }
                   body={copy.noPositions}
                 />
@@ -245,7 +276,7 @@ export default async function AboutPage({ params }: AboutPageProps) {
             <SectionHeading
               id="about-education"
               icon="article"
-              eyebrow={locale === "ar" ? "التعليم والشهادات" : "Formation"}
+              eyebrow={textFor(locale, { ar: "التعليم والشهادات", fr: "Formation", en: "Education" })}
               title={copy.education}
             />
             <div className="mt-2">
@@ -259,17 +290,17 @@ export default async function AboutPage({ params }: AboutPageProps) {
                           ? formatDate(entry.endDate, locale)
                           : copy.present
                       }`}
-                      title={locale === "ar" ? entry.degreeAr : entry.degreeFr}
+                      title={localizedField(locale, entry.degreeAr, entry.degreeFr, entry.degreeEn)}
                       titleHref={`/${locale}/career/education/${entry.slug}` as const}
                       meta={
                         <>
                           <p className="font-serif text-lg font-semibold text-ink">
-                            {locale === "ar" ? entry.institutionAr : entry.institutionFr}
+                            {localizedField(locale, entry.institutionAr, entry.institutionFr, entry.institutionEn)}
                           </p>
                           <p className="text-sm text-ink-600">{entry.location}</p>
                         </>
                       }
-                      excerpt={locale === "ar" ? entry.honoursAr : entry.honoursFr}
+                      excerpt={localizedField(locale, entry.honoursAr, entry.honoursFr, entry.honoursEn)}
                       presentBadge={entry.endDate === null}
                       badgeText={presentBadge}
                     />
@@ -278,7 +309,11 @@ export default async function AboutPage({ params }: AboutPageProps) {
               ) : (
                 <EmptyState
                   icon="article"
-                  heading={locale === "ar" ? "لا توجد دراسات منشورة" : "Aucune formation publiée"}
+                  heading={textFor(locale, {
+                    ar: "لا توجد دراسات منشورة",
+                    fr: "Aucune formation publiée",
+                    en: "No education entries published",
+                  })}
                   body={copy.noEducation}
                 />
               )}
@@ -291,7 +326,11 @@ export default async function AboutPage({ params }: AboutPageProps) {
             <SectionHeading
               id="about-participations"
               icon="globe"
-              eyebrow={locale === "ar" ? "المشاركات الدولية والإقليمية" : "Participations"}
+              eyebrow={textFor(locale, {
+                ar: "المشاركات الدولية والإقليمية",
+                fr: "Participations",
+                en: "Participations",
+              })}
               title={copy.participations}
             />
             <div className="mt-2">
@@ -308,14 +347,14 @@ export default async function AboutPage({ params }: AboutPageProps) {
                             href={`/${locale}/participations/${participation.slug}`}
                             className="rounded hover:underline"
                           >
-                            {locale === "ar" ? participation.titleAr : participation.titleFr}
+                            {localizedField(locale, participation.titleAr, participation.titleFr, participation.titleEn)}
                           </Link>
                         </h3>
                         <p className="text-sm text-ink-600">
-                          {locale === "ar" ? participation.institutionAr : participation.institutionFr}
+                          {localizedField(locale, participation.institutionAr, participation.institutionFr, participation.institutionEn)}
                         </p>
                         <p className="text-sm text-ink-600">
-                          {locale === "ar" ? participation.venueAr : participation.venueFr}
+                          {localizedField(locale, participation.venueAr, participation.venueFr, participation.venueEn)}
                         </p>
                         <Link
                           href={`/${locale}/participations/${participation.slug}`}
@@ -330,7 +369,11 @@ export default async function AboutPage({ params }: AboutPageProps) {
               ) : (
                 <EmptyState
                   icon="globe"
-                  heading={locale === "ar" ? "لا توجد مشاركات منشورة" : "Aucune participation publiée"}
+                  heading={textFor(locale, {
+                    ar: "لا توجد مشاركات منشورة",
+                    fr: "Aucune participation publiée",
+                    en: "No participations published",
+                  })}
                   body={copy.noParticipations}
                 />
               )}
@@ -338,7 +381,7 @@ export default async function AboutPage({ params }: AboutPageProps) {
           </section>
         </MotionReveal>
       </main>
-      <CanonicalFooter pathname={`/${locale}/about`} />
+      <CanonicalFooter pathname={`/${locale}/about`} locale={locale} />
     </>
   );
 }

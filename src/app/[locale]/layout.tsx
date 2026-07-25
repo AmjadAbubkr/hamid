@@ -5,7 +5,7 @@ import {
   Source_Sans_3,
   Noto_Naskh_Arabic,
 } from "next/font/google";
-import { isLocaleCode, LOCALE_META } from "@/lib/i18n/locales";
+import { isLocaleCode, LOCALE_META, textFor } from "@/lib/i18n/locales";
 import { LocaleDocumentDirector } from "@/components/locale-document-director";
 import { PublicNavigation } from "@/components/public/public-navigation";
 import "@/app/globals.css";
@@ -40,6 +40,7 @@ export function generateStaticParams() {
   return [
     { locale: "ar" },
     { locale: "fr" },
+    { locale: "en" },
   ];
 }
 
@@ -53,10 +54,11 @@ export async function generateMetadata({
   const meta = LOCALE_META[locale];
   return {
     title: `Hamid — ${meta.name}`,
-    description:
-      locale === "ar"
-        ? "حامد — الملف الشخصي الرسمي"
-        : "Hamid — profil officiel",
+    description: textFor(locale, {
+      ar: "حامد — الملف الشخصي الرسمي",
+      fr: "Hamid — profil officiel",
+      en: "Hamid — official profile",
+    }),
   };
 }
 

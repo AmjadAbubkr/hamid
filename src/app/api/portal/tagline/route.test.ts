@@ -35,7 +35,7 @@ describe("/api/portal/tagline", () => {
 
     const response = await GET(request());
 
-    expect(response.status).toBe(403);
+    expect(response!.status).toBe(403);
     expect(mocks.getSupabaseAdminClient).not.toHaveBeenCalled();
   });
 
@@ -48,8 +48,8 @@ describe("/api/portal/tagline", () => {
 
     const response = await GET(request());
 
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual(expect.objectContaining({ tagline: claimed }));
+    expect(response!.status).toBe(200);
+    expect(await response!.json()).toEqual(expect.objectContaining({ tagline: claimed }));
     expect(mocks.from).toHaveBeenCalledTimes(2);
   });
 
@@ -67,7 +67,7 @@ describe("/api/portal/tagline", () => {
       action: "publish",
     }));
 
-    expect(response.status).toBe(200);
+    expect(response!.status).toBe(200);
     expect(mocks.requestRpc).toHaveBeenCalledWith("publish_content_item", {
       item_type: "tagline",
       item_id: "tagline-id",

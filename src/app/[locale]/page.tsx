@@ -14,30 +14,53 @@ import { getPublishedArticles } from "@/lib/content/articles";
 import { getPublishedUpcomingEvents } from "@/lib/content/events";
 import { getPublishedPastParticipations } from "@/lib/content/participations";
 import { getPublishedPositions } from "@/lib/content/positions";
-import { isLocaleCode, type LocaleCode } from "@/lib/i18n/locales";
+import {
+  isLocaleCode,
+  textFor,
+  localizedField,
+  intlLocaleFor,
+  type LocaleCode,
+} from "@/lib/i18n/locales";
 
 type Params = { params: Promise<{ locale: string }> };
 
 function displayDate(date: string, locale: LocaleCode) {
-  return new Intl.DateTimeFormat(locale === "ar" ? "ar-TD" : "fr-TD", {
+  return new Intl.DateTimeFormat(intlLocaleFor(locale), {
     month: "short",
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(`${date}T00:00:00Z`));
 }
 
-function heroRole(locale: LocaleCode, currentPosition: Awaited<ReturnType<typeof getPublishedPositions>>[number] | undefined) {
+function heroRole(
+  locale: LocaleCode,
+  currentPosition: Awaited<ReturnType<typeof getPublishedPositions>>[number] | undefined,
+) {
   if (currentPosition) {
     return {
-      title: locale === "ar" ? currentPosition.titleAr : currentPosition.titleFr,
+      title: localizedField(locale, currentPosition.titleAr, currentPosition.titleFr, currentPosition.titleEn),
       institution: currentPosition.institution,
       context: currentPosition.startDate ? displayDate(currentPosition.startDate, locale) : null,
     };
   }
 
-  return locale === "ar"
-    ? { title: "دبلوماسي وسياسي تشادي", institution: "جمهورية تشاد", context: "مرسوم رقم 1005/PR/PM/MC/2026 - 22 مايو 2026" }
-    : { title: "Inspecteur technique", institution: "Ministère de la Communication", context: "Décret n° 1005/PR/PM/MC/2026 du 22 mai 2026" };
+  return {
+    title: textFor(locale, {
+      ar: "دبلوماسي وسياسي تشادي",
+      fr: "Inspecteur technique",
+      en: "Technical Inspector",
+    }),
+    institution: textFor(locale, {
+      ar: "جمهورية تشاد",
+      fr: "Ministère de la Communication",
+      en: "Ministry of Communication",
+    }),
+    context: textFor(locale, {
+      ar: "مرسوم رقم 1005/PR/PM/MC/2026 - 22 مايو 2026",
+      fr: "Décret n° 1005/PR/PM/MC/2026 du 22 mai 2026",
+      en: "Decree No. 1005/PR/PM/MC/2026 of 22 May 2026",
+    }),
+  };
 }
 
 export default async function LocalePage({ params }: Params) {
@@ -58,12 +81,18 @@ export default async function LocalePage({ params }: Params) {
     .slice(0, 4)
     .flatMap((photo) => {
       const src = galleryPublicUrl(photo.storagePath);
-      return src ? [{ id: photo.id, src, caption: locale === "ar" ? photo.captionAr : photo.captionFr }] : [];
+      return src ? [{
+        id: photo.id,
+        src,
+        caption: localizedField(locale, photo.captionAr, photo.captionFr, photo.captionEn),
+      }] : [];
     });
 
-  const aboutParagraph = locale === "ar"
-    ? "مسار مهني مكرس للقانون الدولي والشؤون الدبلوماسية والتعاون الإقليمي."
-    : "Un parcours consacré au droit international, aux affaires diplomatiques et à la coopération régionale.";
+  const aboutParagraph = textFor(locale, {
+    ar: "مسار مهني مكرس للقانون الدولي والشؤون الدبلوماسية والتعاون الإقليمي.",
+    fr: "Un parcours consacré au droit international, aux affaires diplomatiques et à la coopération régionale.",
+    en: "A career dedicated to international law, diplomatic affairs, and regional cooperation.",
+  });
 
   const careerItems = positions.length
     ? positions
@@ -73,13 +102,39 @@ export default async function LocalePage({ params }: Params) {
         .slice(0, 5)
         .map((position) => ({
           id: position.slug,
-          title: locale === "ar" ? position.titleAr : position.titleFr,
+          title: localizedField(locale, position.titleAr, position.titleFr, position.titleEn),
           meta: `${position.institution} · ${displayDate(position.startDate, locale)}`,
           href: `/${locale}/career/${position.slug}` as const,
         }))
     : [
-        { id: "international-law", title: locale === "ar" ? "القانون الدولي والشؤون الدبلوماسية والعامة" : "Droit public et international", meta: locale === "ar" ? "جامعة ياوندي / SOA" : "Université de Yaoundé II / SOA", href: `/${locale}/career` as const },
-        { id: "diplomacy", title: locale === "ar" ? "الشؤون الدبلوماسية والقنصلية" : "Affaires diplomatiques et consulaires", meta: locale === "ar" ? "مسار مهني دولي" : "Parcours international", href: `/${locale}/career` as const },
+        {
+          id: "international-law",
+          title: textFor(locale, {
+            ar: "القانون الدولي والشؤون الدبلوماسية والعامة",
+            fr: "Droit public et international",
+            en: "Public and international law",
+          }),
+          meta: textFor(locale, {
+            ar: "جامعة ياوندي / SOA",
+            fr: "Université de Yaoundé II / SOA",
+            en: "University of Yaoundé II / SOA",
+          }),
+          href: `/${locale}/career` as const,
+        },
+        {
+          id: "diplomacy",
+          title: textFor(locale, {
+            ar: "الشؤون الدبلوماسية والقنصلية",
+            fr: "Affaires diplomatiques et consulaires",
+            en: "Diplomatic and consular affairs",
+          }),
+          meta: textFor(locale, {
+            ar: "مسار مهني دولي",
+            fr: "Parcours international",
+            en: "International career",
+          }),
+          href: `/${locale}/career` as const,
+        },
       ];
 
   return (
@@ -94,7 +149,7 @@ export default async function LocalePage({ params }: Params) {
         */}
         <PageEntrance className="relative w-full overflow-hidden bg-navy">
           <section
-            aria-label={locale === "ar" ? "مقدمة" : "Introduction"}
+            aria-label={textFor(locale, { ar: "مقدمة", fr: "Introduction", en: "Introduction" })}
             className="relative grid w-full lg:grid-cols-2"
           >
             {/* Inline-end column — portrait. Source order is photo-first so that
@@ -123,7 +178,11 @@ export default async function LocalePage({ params }: Params) {
               <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-gold-200">
                 <ProfileIcon name="profile" className="h-4 w-4" />
                 <span>
-                  {locale === "ar" ? "الملف الرسمي" : "Profil public officiel"}
+                  {textFor(locale, {
+                    ar: "الملف الرسمي",
+                    fr: "Profil public officiel",
+                    en: "Official public profile",
+                  })}
                 </span>
               </p>
               <h1 className="text-balance font-serif text-5xl font-semibold leading-[1.05] sm:text-6xl">
@@ -138,7 +197,11 @@ export default async function LocalePage({ params }: Params) {
                   <dt className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-gold-200">
                     <ProfileIcon name="briefcase" className="h-4 w-4" />
                     <span>
-                      {locale === "ar" ? "المنصب الحالي" : "Fonction actuelle"}
+                      {textFor(locale, {
+                        ar: "المنصب الحالي",
+                        fr: "Fonction actuelle",
+                        en: "Current role",
+                      })}
                     </span>
                   </dt>
                   <dd className="font-serif text-2xl font-semibold text-white sm:text-3xl">
@@ -155,13 +218,17 @@ export default async function LocalePage({ params }: Params) {
                     href={`/${locale}/about`}
                     className="inline-flex items-center justify-center gap-2 rounded bg-white px-7 py-3.5 text-sm font-semibold text-navy shadow-[var(--shadow-ambient)] transition-[transform,background-color,box-shadow] duration-200 ease-[var(--ease-soft)] hover:bg-gold-200 active:scale-[0.97]"
                   >
-                    {locale === "ar" ? "استكشاف الملف" : "Découvrir le profil"}
+                    {textFor(locale, {
+                      ar: "استكشاف الملف",
+                      fr: "Découvrir le profil",
+                      en: "Explore the profile",
+                    })}
                   </Link>
                   <Link
                     href={`/${locale}/career`}
                     className="inline-flex items-center justify-center gap-2 rounded border border-white/50 px-7 py-3.5 text-sm font-semibold text-white transition-[transform,background-color,border-color] duration-200 ease-[var(--ease-soft)] hover:border-white hover:bg-white/10 active:scale-[0.97]"
                   >
-                    {locale === "ar" ? "المسيرة" : "Parcours"}
+                    {textFor(locale, { ar: "المسيرة", fr: "Parcours", en: "Career" })}
                   </Link>
                 </div>
               </dl>
@@ -174,40 +241,52 @@ export default async function LocalePage({ params }: Params) {
           <MotionReveal delay={60}>
             <SectionHeading
               icon="profile"
-              eyebrow={locale === "ar" ? "نبذة" : "À propos"}
-              title={
-                locale === "ar"
-                  ? "ممارسة مهنية حول القانون والشؤون الدبلوماسية والتعاون الإقليمي"
-                  : "Une pratique ancrée dans le droit et la coopération internationale"
-              }
+              eyebrow={textFor(locale, { ar: "نبذة", fr: "À propos", en: "About" })}
+              title={textFor(locale, {
+                ar: "ممارسة مهنية حول القانون والشؤون الدبلوماسية والتعاون الإقليمي",
+                fr: "Une pratique ancrée dans le droit et la coopération internationale",
+                en: "A practice grounded in law and international cooperation",
+              })}
             />
             <div className="mt-10 grid gap-5 md:grid-cols-3">
               <FactCard
                 icon="briefcase"
-                title={locale === "ar" ? "القانون الدولي والشؤون الدبلوماسية" : "Droit international"}
-                description={
-                  locale === "ar"
-                    ? "خبرة في الشؤون الدبلوماسية والقنصلية."
-                    : "Compétence en affaires diplomatiques et consulaires."
-                }
+                title={textFor(locale, {
+                  ar: "القانون الدولي والشؤون الدبلوماسية",
+                  fr: "Droit international",
+                  en: "International law",
+                })}
+                description={textFor(locale, {
+                  ar: "خبرة في الشؤون الدبلوماسية والقنصلية.",
+                  fr: "Compétence en affaires diplomatiques et consulaires.",
+                  en: "Expertise in diplomatic and consular affairs.",
+                })}
               />
               <FactCard
                 icon="globe"
-                title={locale === "ar" ? "التكامـل الأفريقي" : "Intégration africaine"}
-                description={
-                  locale === "ar"
-                    ? "الالتزام بالحوار والتعاون الإقليمي."
-                    : "Engagement pour le dialogue et la coopération régionale."
-                }
+                title={textFor(locale, {
+                  ar: "التكامـل الأفريقي",
+                  fr: "Intégration africaine",
+                  en: "African integration",
+                })}
+                description={textFor(locale, {
+                  ar: "الالتزام بالحوار والتعاون الإقليمي.",
+                  fr: "Engagement pour le dialogue et la coopération régionale.",
+                  en: "Commitment to dialogue and regional cooperation.",
+                })}
               />
               <FactCard
                 icon="article"
-                title={locale === "ar" ? "البحث والكتابة" : "Recherche et écriture"}
-                description={
-                  locale === "ar"
-                    ? "تحليلات حول الحوكمة والسلام والتنمية."
-                    : "Analyses sur la gouvernance, la paix et le développement."
-                }
+                title={textFor(locale, {
+                  ar: "البحث والكتابة",
+                  fr: "Recherche et écriture",
+                  en: "Research and writing",
+                })}
+                description={textFor(locale, {
+                  ar: "تحليلات حول الحوكمة والسلام والتنمية.",
+                  fr: "Analyses sur la gouvernance, la paix et le développement.",
+                  en: "Analyses on governance, peace, and development.",
+                })}
               />
             </div>
           </MotionReveal>
@@ -218,17 +297,28 @@ export default async function LocalePage({ params }: Params) {
           <MotionReveal delay={80}>
             <SectionHeading
               icon="briefcase"
-              eyebrow={locale === "ar" ? "المسيرة" : "Parcours"}
-              title={
-                locale === "ar"
-                  ? "خبرات ومسؤوليات"
-                  : "Expériences et responsabilités"
-              }
-              action={{ href: `/${locale}/career`, label: locale === "ar" ? "عرض المسيرة" : "Voir le parcours" }}
+              eyebrow={textFor(locale, { ar: "المسيرة", fr: "Parcours", en: "Career" })}
+              title={textFor(locale, {
+                ar: "خبرات ومسؤوليات",
+                fr: "Expériences et responsabilités",
+                en: "Experience and responsibilities",
+              })}
+              action={{
+                href: `/${locale}/career`,
+                label: textFor(locale, {
+                  ar: "عرض المسيرة",
+                  fr: "Voir le parcours",
+                  en: "View career",
+                }),
+              }}
             />
             <div className="mt-10">
               <TimelineMini
-                ariaLabel={locale === "ar" ? "أبرز المسيرة" : "Temps forts du parcours"}
+                ariaLabel={textFor(locale, {
+                  ar: "أبرز المسيرة",
+                  fr: "Temps forts du parcours",
+                  en: "Career highlights",
+                })}
                 items={careerItems}
               />
             </div>
@@ -240,17 +330,39 @@ export default async function LocalePage({ params }: Params) {
           <MotionReveal delay={100}>
             <SectionHeading
               icon="article"
-              eyebrow={locale === "ar" ? "كتابات" : "Écrits"}
-              title={locale === "ar" ? "مقالات وتحليلات" : "Articles et analyses"}
-              action={{ href: `/${locale}/articles`, label: locale === "ar" ? "كل المقالات" : "Tous les articles" }}
+              eyebrow={textFor(locale, { ar: "كتابات", fr: "Écrits", en: "Writings" })}
+              title={textFor(locale, {
+                ar: "مقالات وتحليلات",
+                fr: "Articles et analyses",
+                en: "Articles and analyses",
+              })}
+              action={{
+                href: `/${locale}/articles`,
+                label: textFor(locale, {
+                  ar: "كل المقالات",
+                  fr: "Tous les articles",
+                  en: "All articles",
+                }),
+              }}
             />
             <ArticlesPreview
               locale={locale}
+              readLabel={textFor(locale, { ar: "اقرأ", fr: "Lire", en: "Read" })}
+              publishedInPrefix={textFor(locale, {
+                ar: "نشر أصلاً في ",
+                fr: "Publié d'abord dans ",
+                en: "Originally published in ",
+              })}
               articles={articles.map((article) => ({
                 href: `/${locale}/articles/${article.slug}`,
-                title: locale === "ar" ? article.titleAr : article.titleFr,
+                title: localizedField(locale, article.titleAr, article.titleFr, article.titleEn),
                 date: displayDate(article.publishedDate, locale),
-                publishedInName: locale === "ar" ? article.publishedInNameAr : article.publishedInNameFr,
+                publishedInName: localizedField(
+                  locale,
+                  article.publishedInNameAr,
+                  article.publishedInNameFr,
+                  article.publishedInNameEn,
+                ),
               }))}
             />
           </MotionReveal>
@@ -261,9 +373,16 @@ export default async function LocalePage({ params }: Params) {
           <MotionReveal delay={120}>
             <SectionHeading
               icon="gallery"
-              eyebrow={locale === "ar" ? "صور" : "Images"}
-              title={locale === "ar" ? "معرض الصور" : "Galerie"}
-              action={{ href: `/${locale}/gallery`, label: locale === "ar" ? "عرض المعرض" : "Voir la galerie" }}
+              eyebrow={textFor(locale, { ar: "صور", fr: "Images", en: "Images" })}
+              title={textFor(locale, { ar: "معرض الصور", fr: "Galerie", en: "Gallery" })}
+              action={{
+                href: `/${locale}/gallery`,
+                label: textFor(locale, {
+                  ar: "عرض المعرض",
+                  fr: "Voir la galerie",
+                  en: "View the gallery",
+                }),
+              }}
             />
             {galleryPreview.length ? (
               <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -307,12 +426,16 @@ export default async function LocalePage({ params }: Params) {
               <div className="mt-10">
                 <EmptyState
                   icon="gallery"
-                  heading={locale === "ar" ? "لا توجد صور بعد" : "Aucune image publiée"}
-                  body={
-                    locale === "ar"
-                      ? "تظهر الصور التي تم نشرها عبر البوابة هنا."
-                      : "Les photos publiées depuis le Portail apparaîtront ici."
-                  }
+                  heading={textFor(locale, {
+                    ar: "لا توجد صور بعد",
+                    fr: "Aucune image publiée",
+                    en: "No images yet",
+                  })}
+                  body={textFor(locale, {
+                    ar: "تظهر الصور التي تم نشرها عبر البوابة هنا.",
+                    fr: "Les photos publiées depuis le Portail apparaîtront ici.",
+                    en: "Photos published through the Portal will appear here.",
+                  })}
                 />
               </div>
             )}
@@ -324,9 +447,24 @@ export default async function LocalePage({ params }: Params) {
           <MotionReveal delay={140}>
             <SectionHeading
               icon="globe"
-              eyebrow={locale === "ar" ? "مشاركات" : "Participations"}
-              title={locale === "ar" ? "فعاليات ومشاركات" : "Événements et participations"}
-              action={{ href: `/${locale}/participations`, label: locale === "ar" ? "كل المشاركات" : "Toutes les participations" }}
+              eyebrow={textFor(locale, {
+                ar: "مشاركات",
+                fr: "Participations",
+                en: "Participations",
+              })}
+              title={textFor(locale, {
+                ar: "فعاليات ومشاركات",
+                fr: "Événements et participations",
+                en: "Events and participations",
+              })}
+              action={{
+                href: `/${locale}/participations`,
+                label: textFor(locale, {
+                  ar: "كل المشاركات",
+                  fr: "Toutes les participations",
+                  en: "All participations",
+                }),
+              }}
             />
             <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {participations.slice(0, 3).map((participation) => (
@@ -342,23 +480,27 @@ export default async function LocalePage({ params }: Params) {
                       href={`/${locale}/participations/${participation.slug}`}
                       className="rounded hover:underline"
                     >
-                      {locale === "ar" ? participation.titleAr : participation.titleFr}
+                      {localizedField(locale, participation.titleAr, participation.titleFr, participation.titleEn)}
                     </Link>
                   </h3>
                   <p className="text-sm text-ink-600">
-                    {locale === "ar" ? participation.institutionAr : participation.institutionFr}
+                    {localizedField(locale, participation.institutionAr, participation.institutionFr, participation.institutionEn)}
                   </p>
                 </article>
               ))}
               {!participations.length ? (
                 <EmptyState
                   icon="globe"
-                  heading={locale === "ar" ? "لا توجد مشاركات منشورة" : "Aucune participation publiée"}
-                  body={
-                    locale === "ar"
-                      ? "تظهر المشاركات المنشورة هنا."
-                      : "Les participations publiées apparaîtront ici."
-                  }
+                  heading={textFor(locale, {
+                    ar: "لا توجد مشاركات منشورة",
+                    fr: "Aucune participation publiée",
+                    en: "No participations published",
+                  })}
+                  body={textFor(locale, {
+                    ar: "تظهر المشاركات المنشورة هنا.",
+                    fr: "Les participations publiées apparaîtront ici.",
+                    en: "Published participations will appear here.",
+                  })}
                 />
               ) : null}
             </div>
@@ -370,14 +512,25 @@ export default async function LocalePage({ params }: Params) {
           <MotionReveal delay={160}>
             <SectionHeading
               icon="calendar"
-              eyebrow={locale === "ar" ? "قادم" : "À venir"}
-              title={locale === "ar" ? "فعاليات قادمة" : "Événements à venir"}
-              action={{ href: `/${locale}/events`, label: locale === "ar" ? "كل الفعاليات" : "Tous les événements" }}
+              eyebrow={textFor(locale, { ar: "قادم", fr: "À venir", en: "Upcoming" })}
+              title={textFor(locale, {
+                ar: "فعاليات قادمة",
+                fr: "Événements à venir",
+                en: "Upcoming events",
+              })}
+              action={{
+                href: `/${locale}/events`,
+                label: textFor(locale, {
+                  ar: "كل الفعاليات",
+                  fr: "Tous les événements",
+                  en: "All events",
+                }),
+              }}
             />
             <div className="mt-10 flex flex-col gap-4">
               {upcomingEvents.slice(0, 3).map((event) => {
                 const formatted = new Intl.DateTimeFormat(
-                  locale === "ar" ? "ar-TD" : "fr-TD",
+                  intlLocaleFor(locale),
                   { day: "numeric", month: "short", timeZone: "UTC" }
                 ).format(new Date(`${event.eventDate}T00:00:00Z`));
                 const [day, month] = formatted.split(" ");
@@ -387,34 +540,32 @@ export default async function LocalePage({ params }: Params) {
                     href={`/${locale}/events/${event.slug}`}
                     date={day ?? displayDate(event.eventDate, locale)}
                     dateLabel={month ?? ""}
-                    title={locale === "ar" ? event.titleAr : event.titleFr}
-                    institution={
-                      locale === "ar" ? event.institutionAr : event.institutionFr
-                    }
-                    location={locale === "ar" ? event.venueAr : event.venueFr}
+                    title={localizedField(locale, event.titleAr, event.titleFr, event.titleEn)}
+                    institution={localizedField(locale, event.institutionAr, event.institutionFr, event.institutionEn)}
+                    location={localizedField(locale, event.venueAr, event.venueFr, event.venueEn)}
                   />
                 );
               })}
               {!upcomingEvents.length ? (
                 <EmptyState
                   icon="calendar"
-                  heading={
-                    locale === "ar"
-                      ? "لا توجد فعاليات قادمة"
-                      : "Aucun événement à venir"
-                  }
-                  body={
-                    locale === "ar"
-                      ? "لا توجد فعاليات قادمة منشورة بعد."
-                      : "Aucun événement à venir n'est publié pour l'instant."
-                  }
+                  heading={textFor(locale, {
+                    ar: "لا توجد فعاليات قادمة",
+                    fr: "Aucun événement à venir",
+                    en: "No upcoming events",
+                  })}
+                  body={textFor(locale, {
+                    ar: "لا توجد فعاليات قادمة منشورة بعد.",
+                    fr: "Aucun événement à venir n'est publié pour l'instant.",
+                    en: "No upcoming events published yet.",
+                  })}
                 />
               ) : null}
             </div>
           </MotionReveal>
         </HomeSection>
       </main>
-      <CanonicalFooter pathname={`/${locale}`} />
+      <CanonicalFooter pathname={`/${locale}`} locale={locale} />
     </>
   );
 }
@@ -436,32 +587,39 @@ function HomeSection({ children, className = "" }: { children: React.ReactNode; 
 function ArticlesPreview({
   locale,
   articles,
+  readLabel,
+  publishedInPrefix,
 }: {
   locale: LocaleCode;
   articles: Array<{ href: string; title: string; date: string; publishedInName: string | null }>;
+  readLabel: string;
+  publishedInPrefix: string;
 }) {
   if (!articles.length) {
     return (
       <div className="mt-10">
         <EmptyState
           icon="article"
-          heading={locale === "ar" ? "لا توجد مقالات منشورة" : "Aucun article publié"}
-          body={
-            locale === "ar"
-              ? "تظهر المقالات المنشورة هنا."
-              : "Les articles publiés apparaîtront ici."
-          }
+          heading={textFor(locale, {
+            ar: "لا توجد مقالات منشورة",
+            fr: "Aucun article publié",
+            en: "No articles published",
+          })}
+          body={textFor(locale, {
+            ar: "تظهر المقالات المنشورة هنا.",
+            fr: "Les articles publiés apparaîtront ici.",
+            en: "Published articles will appear here.",
+          })}
         />
       </div>
     );
   }
   const [featured, ...rest] = articles;
-  const publishedInPrefix =
-    locale === "ar" ? "نشر أصلاً في " : "Publié d'abord dans ";
   return (
     <div className="mt-10 flex flex-col gap-5">
       <ArticleCard
         featured
+        readLabel={readLabel}
         href={featured.href}
         date={featured.date}
         title={featured.title}
@@ -476,6 +634,7 @@ function ArticlesPreview({
           {rest.map((article) => (
             <ArticleCard
               key={article.href}
+              readLabel={readLabel}
               href={article.href}
               date={article.date}
               title={article.title}

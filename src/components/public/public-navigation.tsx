@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ProfileIcon, type ProfileIconName } from "@/components/profile-icons";
 import { LocaleSwitcher } from "@/components/public/locale-switcher";
-import type { LocaleCode } from "@/lib/i18n/locales";
+import { textFor, type LocaleCode } from "@/lib/i18n/locales";
 
 type PublicNavigationProps = {
   locale: LocaleCode;
@@ -28,14 +28,22 @@ const NAVIGATION_LABELS: Record<LocaleCode, Array<{ href: string; label: string;
     { href: "/participations", label: "Participations", icon: "globe" },
     { href: "/events", label: "Événements", icon: "calendar" },
   ],
+  en: [
+    { href: "/about", label: "About", icon: "profile" },
+    { href: "/career", label: "Career", icon: "briefcase" },
+    { href: "/articles", label: "Articles", icon: "article" },
+    { href: "/gallery", label: "Gallery", icon: "gallery" },
+    { href: "/participations", label: "Participations", icon: "globe" },
+    { href: "/events", label: "Events", icon: "calendar" },
+  ],
 };
 
 export function PublicNavigation({ locale }: PublicNavigationProps) {
-  const homeLabel = locale === "ar" ? "حامد" : "Hamid";
-  const subtitle = locale === "ar" ? "الملف الرسمي" : "Profil officiel";
-  const openLabel = locale === "ar" ? "فتح القائمة" : "Ouvrir le menu";
-  const closeLabel = locale === "ar" ? "إغلاق القائمة" : "Fermer le menu";
-  const navAriaLabel = locale === "ar" ? "التنقل الرئيسي" : "Navigation principale";
+  const homeLabel = textFor(locale, { ar: "حامد", fr: "Hamid", en: "Hamid" });
+  const subtitle = textFor(locale, { ar: "الملف الرسمي", fr: "Profil officiel", en: "Official profile" });
+  const openLabel = textFor(locale, { ar: "فتح القائمة", fr: "Ouvrir le menu", en: "Open menu" });
+  const closeLabel = textFor(locale, { ar: "إغلاق القائمة", fr: "Fermer le menu", en: "Close menu" });
+  const navAriaLabel = textFor(locale, { ar: "التنقل الرئيسي", fr: "Navigation principale", en: "Main navigation" });
 
   const pathname = usePathname();
   const [open, setOpen] = useState(false);

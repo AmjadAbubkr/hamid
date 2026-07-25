@@ -48,6 +48,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
     locale,
     event.roleOtherAr,
     event.roleOtherFr,
+    event.roleOtherEn,
   );
   const registrationUrl = safeHttpUrl(event.registrationUrl);
 
@@ -94,7 +95,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           ) : null}
         </article>
       </main>
-      <CanonicalFooter pathname={`/${locale}/events/${event.slug}`} />
+      <CanonicalFooter pathname={`/${locale}/events/${event.slug}`} locale={locale} />
     </>
   );
 }

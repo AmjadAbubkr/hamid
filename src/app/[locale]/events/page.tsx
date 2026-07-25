@@ -5,14 +5,20 @@ import { EventRow } from "@/components/public/cards";
 import { EmptyState } from "@/components/public/empty-state";
 import { PageHeading } from "@/components/public/section-heading";
 import { getPublishedUpcomingEventsForListing } from "@/lib/content/events";
-import { isLocaleCode, type LocaleCode } from "@/lib/i18n/locales";
+import {
+  isLocaleCode,
+  textFor,
+  localizedField,
+  intlLocaleFor,
+  type LocaleCode,
+} from "@/lib/i18n/locales";
 
 type EventsPageProps = {
   params: Promise<{ locale: string }>;
 };
 
 function formatEventDate(date: string, locale: LocaleCode) {
-  return new Intl.DateTimeFormat(locale === "ar" ? "ar-TD" : "fr-TD", {
+  return new Intl.DateTimeFormat(intlLocaleFor(locale), {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -23,10 +29,11 @@ function formatEventDate(date: string, locale: LocaleCode) {
 function dateParts(date: string, locale: LocaleCode) {
   // Returns `[day-or-detail, rest-label]` for the prominent date block on each
   // EventRow. Falls back to the full date in either slot if Intl fragments.
-  const formatted = new Intl.DateTimeFormat(
-    locale === "ar" ? "ar-TD" : "fr-TD",
-    { day: "numeric", month: "short", timeZone: "UTC" },
-  ).format(new Date(`${date}T00:00:00Z`));
+  const formatted = new Intl.DateTimeFormat(intlLocaleFor(locale), {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(new Date(`${date}T00:00:00Z`));
   const parts = formatted.split(/\s+/).filter(Boolean);
   if (parts.length >= 2) {
     return { day: parts[0] ?? "", label: parts.slice(1).join(" ") };
@@ -40,12 +47,34 @@ export default async function EventsPage({ params }: EventsPageProps) {
 
   const locale = rawLocale;
   const events = await getPublishedUpcomingEventsForListing();
-  const headingText = locale === "ar" ? "الفعاليات القادمة" : "Événements à venir";
-  const eyebrow = locale === "ar" ? "جدول رسمي" : "Agenda officiel";
-  const intro =
-    locale === "ar"
-      ? "المواعيد الرسمية القادمة لحامد — خطابات ومهرجانات واحتفالات."
-      : "Les engagements publics à venir de Hamid — allocutions, conférences et cérémonies.";
+  const headingText = textFor(locale, {
+    ar: "الفعاليات القادمة",
+    fr: "Événements à venir",
+    en: "Upcoming events",
+  });
+  const eyebrow = textFor(locale, {
+    ar: "جدول رسمي",
+    fr: "Agenda officiel",
+    en: "Official agenda",
+  });
+  const intro = textFor(locale, {
+    ar: "المواعيد الرسمية القادمة لحامد — خطابات ومهرجانات واحتفالات.",
+    fr: "Les engagements publics à venir de Hamid — allocutions, conférences et cérémonies.",
+    en: "Hamid's upcoming official engagements — speeches, conferences, and ceremonies.",
+  });
+  const emptyHeading = textFor(locale, {
+    ar: "لا توجد فعليات قادمة",
+    fr: "Aucun événement à venir",
+    en: "No upcoming events",
+  });
+  // The curly apostrophe U+2019 in "n'est" matches the spelling used in the
+  // participation-pages and event-pages tests; keep it identical across locales
+  // that use an apostrophe.
+  const emptyBody = textFor(locale, {
+    ar: "لا توجد فعليات مجدولة حالياً.",
+    fr: "Aucun événement n’est programmé pour le moment.",
+    en: "No events are currently scheduled.",
+  });
 
   return (
     <>
@@ -58,16 +87,8 @@ export default async function EventsPage({ params }: EventsPageProps) {
           {events.length === 0 ? (
             <EmptyState
               icon="calendar"
-              heading={
-                locale === "ar"
-                  ? "لا توجد فعليات قادمة"
-                  : "Aucun événement à venir"
-              }
-              body={
-                locale === "ar"
-                  ? "لا توجد فعليات مجدولة حالياً."
-                  : "Aucun événement n'est programmé pour le moment."
-              }
+              heading={emptyHeading}
+              body={emptyBody}
             />
           ) : (
             <ol className="flex flex-col gap-4">
@@ -79,11 +100,9 @@ export default async function EventsPage({ params }: EventsPageProps) {
                       href={`/${locale}/events/${event.slug}` as const}
                       date={day}
                       dateLabel={label}
-                      title={locale === "ar" ? event.titleAr : event.titleFr}
-                      institution={
-                        locale === "ar" ? event.institutionAr : event.institutionFr
-                      }
-                      location={locale === "ar" ? event.venueAr : event.venueFr}
+                      title={localizedField(locale, event.titleAr, event.titleFr, event.titleEn)}
+                      institution={localizedField(locale, event.institutionAr, event.institutionFr, event.institutionEn)}
+                      location={localizedField(locale, event.venueAr, event.venueFr, event.venueEn)}
                     />
                   </li>
                 );
@@ -92,7 +111,7 @@ export default async function EventsPage({ params }: EventsPageProps) {
           )}
         </MotionReveal>
       </main>
-      <CanonicalFooter pathname={`/${locale}/events`} />
+      <CanonicalFooter pathname={`/${locale}/events`} locale={locale} />
     </>
   );
 }

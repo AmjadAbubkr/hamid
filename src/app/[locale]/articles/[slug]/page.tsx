@@ -72,7 +72,7 @@ export default async function ArticleDetailPage({ params }: ArticleDetailPagePro
           />
         </article>
       </main>
-      <CanonicalFooter pathname={`/${locale}/articles/${article.slug}`} />
+      <CanonicalFooter pathname={`/${locale}/articles/${article.slug}`} locale={locale} />
     </>
   );
 }

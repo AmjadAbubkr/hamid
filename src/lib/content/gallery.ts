@@ -9,25 +9,31 @@ export type GalleryPhoto = {
   storagePath: string;
   captionAr: string;
   captionFr: string;
+  captionEn: string | null;
   takenDate: string | null;
   photographerCreditAr: string | null;
   photographerCreditFr: string | null;
+  photographerCreditEn: string | null;
   categoryAr: string | null;
   categoryFr: string | null;
+  categoryEn: string | null;
 };
 
-const GALLERY_FIELDS = "id,storage_path,caption_ar,caption_fr,taken_date,photographer_credit_ar,photographer_credit_fr,category_ar,category_fr";
+const GALLERY_FIELDS = "id,storage_path,caption_ar,caption_fr,caption_en,taken_date,photographer_credit_ar,photographer_credit_fr,photographer_credit_en,category_ar,category_fr,category_en";
 
 type GalleryPhotoRow = {
   id: string;
   storage_path: string;
   caption_ar: string;
   caption_fr: string;
+  caption_en: string | null;
   taken_date: string | null;
   photographer_credit_ar: string | null;
   photographer_credit_fr: string | null;
+  photographer_credit_en: string | null;
   category_ar: string | null;
   category_fr: string | null;
+  category_en: string | null;
 };
 
 function getClient(client?: SupabaseClient) {
@@ -41,11 +47,14 @@ function toGalleryPhoto(row: GalleryPhotoRow): GalleryPhoto {
     storagePath: row.storage_path,
     captionAr: row.caption_ar,
     captionFr: row.caption_fr,
+    captionEn: row.caption_en,
     takenDate: row.taken_date,
     photographerCreditAr: row.photographer_credit_ar,
     photographerCreditFr: row.photographer_credit_fr,
+    photographerCreditEn: row.photographer_credit_en,
     categoryAr: row.category_ar,
     categoryFr: row.category_fr,
+    categoryEn: row.category_en,
   };
 }
 
@@ -70,66 +79,84 @@ const LOCAL_GALLERY_PHOTOS: ReadonlyArray<GalleryPhoto> = [
     storagePath: "/imgs/hamid-minister.jpg",
     captionAr: "حامد مع الوزير",
     captionFr: "Hamid avec le ministre",
+    captionEn: "Hamid with the minister",
     takenDate: "2024-01-01",
     photographerCreditAr: null,
     photographerCreditFr: null,
+    photographerCreditEn: null,
     categoryAr: "مشاركة رسمية",
     categoryFr: "Participation officielle",
+    categoryEn: "Official participation",
   },
   {
     id: "local-hamid3gal",
     storagePath: "/imgs/hamid3gal.jpg",
     captionAr: "لقطة من ومع",
     captionFr: "Moment de rencontre",
+    captionEn: "A meeting moment",
     takenDate: "2024-01-02",
     photographerCreditAr: null,
     photographerCreditFr: null,
+    photographerCreditEn: null,
     categoryAr: "لقاءات",
     categoryFr: "Rencontres",
+    categoryEn: "Meetings",
   },
   {
     id: "local-hamid6gal",
     storagePath: "/imgs/hamid6gal.jpg",
     captionAr: "صورة وثائقية",
     captionFr: "Image documentaire",
+    captionEn: "Documentary image",
     takenDate: "2024-01-03",
     photographerCreditAr: null,
     photographerCreditFr: null,
+    photographerCreditEn: null,
     categoryAr: "توثيق",
     categoryFr: "Documentation",
+    categoryEn: "Documentation",
   },
   {
     id: "local-hamid7gal",
     storagePath: "/imgs/hamid7gal.jpg",
     captionAr: "لقطة من ومع",
     captionFr: "Moment de rencontre",
+    captionEn: "A meeting moment",
     takenDate: "2024-01-04",
     photographerCreditAr: null,
     photographerCreditFr: null,
+    photographerCreditEn: null,
     categoryAr: "لقاءات",
     categoryFr: "Rencontres",
+    categoryEn: "Meetings",
   },
   {
     id: "local-hamid8gal",
     storagePath: "/imgs/hamid8gal.jpg",
     captionAr: "صورة وثائقية",
     captionFr: "Image documentaire",
+    captionEn: "Documentary image",
     takenDate: "2024-01-05",
     photographerCreditAr: null,
     photographerCreditFr: null,
+    photographerCreditEn: null,
     categoryAr: "توثيق",
     categoryFr: "Documentation",
+    categoryEn: "Documentation",
   },
   {
     id: "local-hamid12gal",
     storagePath: "/imgs/hamid12gal.jpg",
     captionAr: "صورة رسمية",
     captionFr: "Image officielle",
+    captionEn: "Official photograph",
     takenDate: "2024-01-06",
     photographerCreditAr: null,
     photographerCreditFr: null,
+    photographerCreditEn: null,
     categoryAr: "رسمي",
     categoryFr: "Officiel",
+    categoryEn: "Official",
   },
 ];
 

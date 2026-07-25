@@ -30,9 +30,11 @@ export function FactCard({
 }
 
 /*
-  ArticleCard â€” editorial treatment. Two sizes: featured (larger, two-column
+  ArticleCard — editorial treatment. Two sizes: featured (larger, two-column
   image + copy block) and standard (one-row). Both render a publication date
   eyebrow, a serif title, an excerpt, and a quiet reading CTA at the end.
+  The CTA label is fully caller-provided so the same component renders in any
+  Locale (`Lire` | `اقرأ` | `Read`).
 */
 export function ArticleCard({
   href,
@@ -41,6 +43,7 @@ export function ArticleCard({
   excerpt,
   publishedIn,
   featured = false,
+  readLabel = "Read",
 }: {
   href: Route;
   date: string;
@@ -48,8 +51,9 @@ export function ArticleCard({
   excerpt?: string;
   publishedIn?: string | null;
   featured?: boolean;
+  readLabel?: string;
 }) {
-  const label = `Lire â€” ${title}`;
+  const label = `${readLabel} — ${title}`;
   if (featured) {
     return (
       <article className="group grid gap-0 overflow-hidden rounded border-line bg-surface shadow-[var(--shadow-ambient)] md:grid-cols-2">
