@@ -28,7 +28,7 @@ export default async function EditGalleryPhotoPage({ params }: { params: Promise
 
   return (
     <PortalFrame title="Edit Gallery Photo">
-      <Link href="/portal/gallery" className="w-fit text-sm font-semibold text-[#04162e] underline decoration-[#7b5800] underline-offset-4">
+      <Link href="/portal/gallery" className="w-fit text-sm font-semibold text-ink underline decoration-gold underline-offset-4">
         Back to Gallery Photos
       </Link>
       <GalleryForm photo={data as GalleryPhoto} />

@@ -1,23 +1,181 @@
 @import "tailwindcss";
 
-:root {
-  --background: #f8f9fa;
-  --foreground: #191c1d;
+/*
+  Design tokens — sourced from the user's "Diplomatic Excellence" palette:
+    Midnight Navy #0B1F3A  -> brand, page background, headings, buttons
+    Royal Blue   #1F4E79  -> hover/gradient second stop
+    Gold          #C9A227  -> eyebrows, icons, accents, links, focus
+    Ivory         #F8F6F1  -> body text on navy, surface highlights
+    Charcoal      #2C2F33  -> secondary text/dimmed copy
+    White         #FFFFFF  -> card surfaces that sit on the navy bg
+
+  The site is a DARK-FIRST theme: navy is the page background; ivory is the
+  body text; gold is the accent. Cards/surfaces are lighter navy tints and
+  near-white that read as "paper" floating on the navy page. The hero panel
+  is the same navy as the page so the title column dissolves into the bg.
+
+  Exposed to Tailwind v4 via @theme so the colors become utilities
+  (bg-navy, text-gold, border-line, ring-line, etc.). The zinc-* utilities
+  used across the admin Portal are remapped below to dark-theme-appropriate
+  values so every Portal component renders dark without per-file edits.
+*/
+@theme inline {
+  /* Brand */
+  --color-navy: #0B1F3A;
+  --color-navy-700: #1F4E79;
+  --color-navy-600: #3A6B9C;
+
+  --color-gold: #C9A227;
+  --color-gold-300: #E6C757;
+  --color-gold-200: #F3E3A1;
+
+  /* Surfaces — dark navy tints (page → cards). page bg is navy itself;
+     surfaces climb toward lighter navy/royal so cards lift off the bg. */
+  --color-bg: #0B1F3A;
+  --color-surface: #142B4D;
+  --color-surface-low: #17315A;
+  --color-surface-base: #1B3766;
+  --color-surface-high: #214077;
+  --color-surface-highest: #2A4C87;
+
+  /* Inks — ivory ladder. Body text is ivory; charcoal handles dimmed copy. */
+  --color-ink: #F8F6F1;
+  --color-ink-700: #E4E1D8;
+  --color-ink-600: #B5B0A4;
+
+  /* Read as charcoal-warm against the navy bg */
+  --color-charcoal: #2C2F33;
+
+  /* Lines — translucent ivory so hairlines are quiet on dark */
+  --color-line: rgba(248, 246, 241, 0.16);
+  --color-line-soft: rgba(248, 246, 241, 0.10);
+
+  /* --------------------------------------------------------------------------
+     zinc remap — admin Portal components use Tailwind's zinc-* utilities
+     against a light theme. We re-define the zinc scale here so every Portal
+     page renders dark: zinc-50..200 become dark navy surfaces, zinc-700..950
+     become ivory inks, zinc-300..500 become translucent ivory lines/dividers.
+     This is the single switch that inverts the entire Portal UI without
+     touching the form/list components.
+     -------------------------------------------------------------------------- */
+  --color-zinc-50: #0B1F3A;
+  --color-zinc-100: #142B4D;
+  --color-zinc-200: #17315A;
+  --color-zinc-300: rgba(248, 246, 241, 0.22);
+  --color-zinc-400: rgba(248, 246, 241, 0.40);
+  --color-zinc-500: #B5B0A4;
+  --color-zinc-600: #C9C4B7;
+  --color-zinc-700: #E4E1D8;
+  --color-zinc-800: #F0EDE3;
+  --color-zinc-900: #F8F6F1;
+  --color-zinc-950: #FFFFFF;
+
+  /* Fonts (logical theme hooks — set on <html> by the [locale] layout).
+     The next/font/google variables enhance the stack when the dev server
+     can reach Google Fonts; the rest are locally-installed fallbacks so
+     the page never renders broken glyphs if the fetch is offline. */
+  --font-serif: var(--font-display), "Libre Caslon Text", Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-body), "Source Sans 3", "Helvetica Neue", Arial, sans-serif;
+  --font-ar: var(--font-naskh), "Noto Naskh Arabic", "Amiri", serif;
+
+  /* Radius — soft (0.25rem) per DESIGN.md; never pill-shaped */
+  --radius: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+
+  /* Ambient shadows — on a dark bg, shadows read as even darker navy with a
+     touch of black; gold-tinted rim is avoided so cards stay quiet. */
+  --shadow-ambient: 0 12px 30px rgba(0, 0, 0, 0.35);
+  --shadow-ambient-lg: 0 20px 40px rgba(0, 0, 0, 0.45);
+  --shadow-ambient-hover: 0 18px 36px rgba(0, 0, 0, 0.50);
+
+  /* Section rhythm */
+  --spacing-section: 5rem;
+
+  /* Motion */
+  --ease-soft: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+:root {
+  --background: var(--color-bg);
+  --foreground: var(--color-ink);
+}
+
+html {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  line-height: 1.6;
 }
 
+/* Arabic typography: switch the document to the Naskh face + tighter weight. */
+html[dir="rtl"] body,
+html[dir="rtl"] {
+  font-family: var(--font-ar);
+}
+
+/* Headlines always use the serif display face, including in RTL where the
+   Naskh family takes over via the var fallback chain. */
+.font-serif {
+  font-family: var(--font-serif);
+}
+html[dir="rtl"] .font-serif {
+  font-family: var(--font-ar);
+}
+
+/* Premium image rendering: no half-pixel edge fringing on scaled photos. */
+img,
+picture,
+video,
+canvas {
+  image-rendering: auto;
+  max-width: 100%;
+}
+
+/* Selection in gold-on-navy — a quiet institutional detail that stays
+   legible against the dark theme. */
+::selection {
+  background: var(--color-gold);
+  color: var(--color-navy);
+}
+
+/* Custom horizontal scrollbar is suppressed; the design relies on negative space. */
+::placeholder {
+  color: var(--color-ink-600);
+  opacity: 0.7;
+}
+
+/* Respect reduced motion everywhere — never animate for users who opted out. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Motion primitives — consumed by MotionReveal and PageEntrance.
+   Enhanced from the previous implementation: slightly longer, with a touch
+   of blur for a cinematic feel. Reduced-motion users see no transition.
+   -------------------------------------------------------------------------- */
 .motion-page-entrance,
 .motion-reveal {
   opacity: 1;
@@ -28,16 +186,16 @@ body {
 .motion-page-entrance--enabled,
 .motion-reveal--enabled {
   transition-property: opacity, transform, filter;
-  transition-duration: 480ms;
+  transition-duration: 620ms;
   transition-delay: var(--motion-delay, 0ms);
-  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  transition-timing-function: var(--ease-soft);
 }
 
 .motion-page-entrance--enabled:not(.motion-page-entrance--visible),
 .motion-reveal--enabled:not(.motion-reveal--visible) {
   opacity: 0;
-  transform: translateY(12px);
-  filter: blur(4px);
+  transform: translateY(16px);
+  filter: blur(6px);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -50,14 +208,124 @@ body {
   }
 }
 
+/* --------------------------------------------------------------------------
+   Sticky-navigation blur — applied by PublicNavigation when scrolled.
+   Dark theme: translucent navy over a navy page, hairline is ivory-soft.
+   -------------------------------------------------------------------------- */
+.nav-blur {
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  backdrop-filter: saturate(160%) blur(14px);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+}
+
+.nav-blur--pinned {
+  box-shadow:
+    0 1px 0 var(--color-line-soft),
+    0 8px 24px rgba(0, 0, 0, 0.30);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-blur--pinned {
+    transition: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Cinematic hero — a two-column hero where the portrait sits on one side and
+   a deep navy title panel sits on the other. Instead of a hard vertical line
+   between them, the navy panel's inline-end edge dissolves into the portrait
+   via a ::after pseudo-element. The pseudo-element paints a navy-to-transparent
+   linear gradient that extends over the column seam and a few inches into the
+   photo, so the image itself is never blurred, recoloured, or quality-reduced.
+   -------------------------------------------------------------------------- */
+
+.hero-fade-panel {
+  position: relative;
+  isolation: isolate;
+  z-index: 2;
+}
+
+.hero-fade-panel::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: -1;
+
+  inset-block: -4rem;
+  inset-inline-end: -14rem;
+  width: 20rem;
+
+  background: linear-gradient(
+    to var(--hero-fade-dir, right),
+    var(--color-navy) 0%,
+    var(--color-navy) 30%,
+    rgba(11, 31, 58, 0.96) 48%,
+    rgba(11, 31, 58, 0.82) 62%,
+    rgba(11, 31, 58, 0.5) 80%,
+    rgba(11, 31, 58, 0.18) 92%,
+    transparent 100%
+  );
+
+  filter: blur(5px);
+  transform: scaleX(1.18);
+  transform-origin: left center;
+}
+
+[dir="ltr"] .hero-fade-panel {
+  --hero-fade-dir: right;
+}
+
+[dir="rtl"] .hero-fade-panel {
+  --hero-fade-dir: left;
+}
+
+[dir="rtl"] .hero-fade-panel::after {
+  transform-origin: right center;
+}
+
+/* On viewports where the two columns stack (below lg), the portrait sits on
+   top of the navy title panel. The ::after therefore becomes an upward-facing
+   fade anchored to the top edge of the panel, dissolving the navy into the
+   photo's bottom edge so the transition still feels soft instead of a hard
+   horizontal seam. */
+@media (max-width: 1023.98px) {
+  .hero-fade-panel::after {
+    inset-inline: 0;
+    inset-block-start: -9rem;
+    inset-block-end: auto;
+    width: auto;
+    height: 12rem;
+
+    background: linear-gradient(
+      to top,
+      var(--color-navy) 0%,
+      var(--color-navy) 40%,
+      rgba(11, 31, 58, 0.9) 58%,
+      rgba(11, 31, 58, 0.5) 78%,
+      rgba(11, 31, 58, 0.2) 90%,
+      transparent 100%
+    );
+
+    filter: blur(30px);
+    transform: scaleY(1.18);
+    transform-origin: center bottom;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Mobile navigation — preserved from the original implementation (animated
+   accordion on small screens only). Uses logical transform origin. Dark
+   theme: translucent surface over the navy page, ivory hairline.
+   -------------------------------------------------------------------------- */
 .mobile-nav-panel {
   overflow: hidden;
-  background: #ffffff;
-  border-bottom: 1px solid #c5c6ce;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-line);
   transform-origin: top right;
   opacity: 1;
   transform: scaleY(1);
-  transition: opacity 200ms ease-out, transform 200ms ease-out;
+  transition: opacity 220ms var(--ease-out-cubic),
+    transform 220ms var(--ease-out-cubic);
 }
 
 [dir="rtl"] .mobile-nav-panel {
@@ -76,5 +344,27 @@ body {
   .mobile-nav-panel:not([data-open]) {
     transition-property: opacity;
     transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Lightbox fade — used by GalleryGrid.
+   -------------------------------------------------------------------------- */
+.lightbox-fade {
+  animation: lightbox-in 220ms var(--ease-out-cubic);
+}
+
+@keyframes lightbox-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox-fade {
+    animation: none;
   }
 }

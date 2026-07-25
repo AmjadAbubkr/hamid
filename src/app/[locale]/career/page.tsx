@@ -1,6 +1,9 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CanonicalFooter } from "@/components/canonical-footer";
+import { MotionReveal, PageEntrance } from "@/components/motion-reveal";
+import { EmptyState } from "@/components/public/empty-state";
+import { PageHeading, SectionHeading } from "@/components/public/section-heading";
+import { Timeline, TimelineEntry } from "@/components/public/timeline";
 import {
   getPublishedPositions,
   type PositionHeld,
@@ -33,7 +36,7 @@ function positionText(position: PositionHeld, locale: LocaleCode) {
   return {
     title: locale === "ar" ? position.titleAr : position.titleFr,
     body: locale === "ar" ? position.bodyAr : position.bodyFr,
-    present: locale === "ar" ? "حتى الآن" : "Aujourd’hui",
+    present: locale === "ar" ? "حتى الآن" : "Aujourd'hui",
   };
 }
 
@@ -42,7 +45,7 @@ function educationText(entry: EducationEntry, locale: LocaleCode) {
     degree: locale === "ar" ? entry.degreeAr : entry.degreeFr,
     institution: locale === "ar" ? entry.institutionAr : entry.institutionFr,
     honours: locale === "ar" ? entry.honoursAr : entry.honoursFr,
-    present: locale === "ar" ? "حتى الآن" : "Aujourd’hui",
+    present: locale === "ar" ? "حتى الآن" : "Aujourd'hui",
   };
 }
 
@@ -66,177 +69,175 @@ export default async function CareerPage({ params }: CareerPageProps) {
   if (!isLocaleCode(rawLocale)) notFound();
 
   const locale = rawLocale;
-  const positions = await getPublishedPositions();
-  const educationEntries = await getPublishedEducationEntries();
-  const participations = await getPublishedPastParticipations();
+  const [positions, educationEntries, participations] = await Promise.all([
+    getPublishedPositions(),
+    getPublishedEducationEntries(),
+    getPublishedPastParticipations(),
+  ]);
+
+  const presentBadge = locale === "ar" ? "حتى الآن" : "En cours";
 
   return (
     <>
-      <main className="ps-6 pe-6 mx-auto w-full max-w-3xl flex-1 py-12 text-start">
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
-          {locale === "ar" ? "المسيرة المهنية" : "Parcours professionnel"}
-        </h1>
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-14 px-6 py-14 text-start sm:px-8 sm:py-20">
+        <PageEntrance>
+          <PageHeading
+            eyebrow={locale === "ar" ? "المسيرة المهنية" : "Trajectoire"}
+            title={locale === "ar" ? "المناصب والتعليم والمشاركات" : "Parcours professionnel"}
+            intro={
+              locale === "ar"
+                ? "مراجعة شاملة للمناصب والتعليم والمشاركات الدولية والإقليمية."
+                : "Une chronologie des fonctions occupées, de la formation et des engagements officiels."
+            }
+          />
+        </PageEntrance>
 
-        <h2 className="mt-8 text-2xl font-semibold tracking-tight text-zinc-900">
-          {locale === "ar" ? "المناصب التي شغلها" : "Postes occupés"}
-        </h2>
-
-        {positions.length === 0 ? (
-          <p className="mt-4 text-zinc-600">
-            {locale === "ar"
-              ? "لا توجد مناصب منشورة بعد."
-              : "Aucun poste publié pour le moment."}
-          </p>
-        ) : (
-          <ol className="mt-4 flex flex-col gap-7 border-s border-zinc-300 ps-6">
-            {positions.map((position) => {
-              const localized = positionText(position, locale);
-              const endDate = position.endDate
-                ? formatDate(position.endDate, locale)
-                : localized.present;
-
-              return (
-                <li key={position.slug} className="relative text-start">
-                  <span
-                    aria-hidden="true"
-                    className="absolute start-[-1.72rem] top-2 h-3 w-3 rounded-full bg-zinc-900 ring-4 ring-white"
-                  />
-                  <article className="flex flex-col gap-2">
-                    <p className="text-sm text-zinc-500">
-                      {formatDate(position.startDate, locale)} — {endDate}
-                    </p>
-                    <h2 className="text-xl font-semibold text-zinc-900">
-                      <Link
-                        href={`/${locale}/career/${position.slug}`}
-                        className="rounded-s-sm rounded-e-sm underline decoration-zinc-400 underline-offset-4"
-                      >
-                        {localized.title}
-                      </Link>
-                    </h2>
-                    <p className="text-zinc-700">{position.institution}</p>
-                    <p className="text-sm text-zinc-500">
-                      {position.location}
-                    </p>
-                    {localized.body ? (
-                      <p className="leading-relaxed text-zinc-700">
-                        {localized.body}
-                      </p>
-                    ) : null}
-                  </article>
-                </li>
-              );
-            })}
-          </ol>
-        )}
-
-        <section className="mt-12" aria-labelledby="education-heading">
-          <h2
-            id="education-heading"
-            className="text-2xl font-semibold tracking-tight text-zinc-900"
-          >
-            {locale === "ar" ? "التعليم" : "Formation"}
-          </h2>
-
-          {educationEntries.length === 0 ? (
-            <p className="mt-4 text-zinc-600">
-              {locale === "ar"
-                ? "لا توجد دراسات منشورة بعد."
-                : "Aucune formation publiée pour le moment."}
-            </p>
-          ) : (
-            <ol className="mt-4 flex flex-col gap-7 border-s border-zinc-300 ps-6">
-              {educationEntries.map((entry) => {
-                const localized = educationText(entry, locale);
-                const endDate = entry.endDate
-                  ? formatDate(entry.endDate, locale)
-                  : localized.present;
-
-                return (
-                  <li key={entry.slug} className="relative text-start">
-                    <span
-                      aria-hidden="true"
-                      className="absolute start-[-1.72rem] top-2 h-3 w-3 rounded-full bg-zinc-900 ring-4 ring-white"
+        <MotionReveal delay={60}>
+          <section aria-labelledby="career-positions" className="flex flex-col gap-8">
+            <SectionHeading
+              id="career-positions"
+              icon="briefcase"
+              eyebrow={locale === "ar" ? "المناصب الحالية والسابقة" : "Postes"}
+              title={locale === "ar" ? "المناصب التي شغلها" : "Postes occupés"}
+            />
+            {positions.length ? (
+              <Timeline ariaLabel={locale === "ar" ? "المناصب التي شغلها" : "Postes occupés"}>
+                {positions.map((position) => {
+                  const localized = positionText(position, locale);
+                  const endDate = position.endDate
+                    ? formatDate(position.endDate, locale)
+                    : localized.present;
+                  return (
+                    <TimelineEntry
+                      key={position.slug}
+                      dateLabel={`${formatDate(position.startDate, locale)} — ${endDate}`}
+                      title={localized.title}
+                      titleHref={`/${locale}/career/${position.slug}` as const}
+                      meta={
+                        <>
+                          <p className="font-serif text-lg font-semibold text-ink">
+                            {position.institution}
+                          </p>
+                          <p className="text-sm text-ink-600">{position.location}</p>
+                        </>
+                      }
+                      excerpt={localized.body}
+                      presentBadge={position.endDate === null}
+                      badgeText={presentBadge}
                     />
-                    <article className="flex flex-col gap-2">
-                      <p className="text-sm text-zinc-500">
-                        {formatDate(entry.startDate, locale)} — {endDate}
-                      </p>
-                      <h3 className="text-xl font-semibold text-zinc-900">
-                        <Link
-                          href={`/${locale}/career/education/${entry.slug}`}
-                          className="rounded-s-sm rounded-e-sm underline decoration-zinc-400 underline-offset-4"
-                        >
-                          {localized.degree}
-                        </Link>
-                      </h3>
-                      <p className="text-zinc-700">{localized.institution}</p>
-                      <p className="text-sm text-zinc-500">{entry.location}</p>
-                      {localized.honours ? (
-                        <p className="leading-relaxed text-zinc-700">
-                          {localized.honours}
-                        </p>
-                      ) : null}
-                    </article>
-                  </li>
-                );
-              })}
-            </ol>
-          )}
-        </section>
+                  );
+                })}
+              </Timeline>
+            ) : (
+              <EmptyState
+                icon="briefcase"
+                heading={locale === "ar" ? "لا توجد مناصب منشورة" : "Aucun poste publié"}
+                body={
+                  locale === "ar"
+                    ? "تظهر المناصب التي شغلها هنا."
+                    : "Les postes publiés apparaîtront ici."
+                }
+              />
+            )}
+          </section>
+        </MotionReveal>
 
-        <section className="mt-12" aria-labelledby="participations-heading">
-          <h2
-            id="participations-heading"
-            className="text-2xl font-semibold tracking-tight text-zinc-900"
-          >
-            {locale === "ar" ? "المشاركات السابقة" : "Participations passées"}
-          </h2>
-
-          {participations.length === 0 ? (
-            <p className="mt-4 text-zinc-600">
-              {locale === "ar"
-                ? "لا توجد مشاركات منشورة بعد."
-                : "Aucune participation publiée pour le moment."}
-            </p>
-          ) : (
-            <ol className="mt-4 flex flex-col gap-7 border-s border-zinc-300 ps-6">
-              {participations.map((entry) => {
-                const localized = participationText(entry, locale);
-
-                return (
-                  <li key={entry.slug} className="relative text-start">
-                    <span
-                      aria-hidden="true"
-                      className="absolute start-[-1.72rem] top-2 h-3 w-3 rounded-full bg-zinc-900 ring-4 ring-white"
+        <MotionReveal delay={120}>
+          <section aria-labelledby="career-education" className="flex flex-col gap-8">
+            <SectionHeading
+              id="career-education"
+              icon="article"
+              eyebrow={locale === "ar" ? "التعليم والشهادات" : "Formation"}
+              title={locale === "ar" ? "التعليم والشهادات والدراسات" : "Formation"}
+            />
+            {educationEntries.length ? (
+              <Timeline ariaLabel={locale === "ar" ? "التعليم والشهادات" : "Formation"}>
+                {educationEntries.map((entry) => {
+                  const localized = educationText(entry, locale);
+                  const endDate = entry.endDate
+                    ? formatDate(entry.endDate, locale)
+                    : localized.present;
+                  return (
+                    <TimelineEntry
+                      key={entry.slug}
+                      dateLabel={`${formatDate(entry.startDate, locale)} — ${endDate}`}
+                      title={localized.degree}
+                      titleHref={`/${locale}/career/education/${entry.slug}` as const}
+                      meta={
+                        <>
+                          <p className="font-serif text-lg font-semibold text-ink">
+                            {localized.institution}
+                          </p>
+                          <p className="text-sm text-ink-600">{entry.location}</p>
+                        </>
+                      }
+                      excerpt={localized.honours}
+                      presentBadge={entry.endDate === null}
+                      badgeText={presentBadge}
                     />
-                    <article className="flex flex-col gap-2">
-                      <p className="text-sm text-zinc-500">
-                        {entry.eventDateLabel}
-                      </p>
-                      <h3 className="text-xl font-semibold text-zinc-900">
-                        <Link
-                          href={`/${locale}/participations/${entry.slug}`}
-                          className="rounded-s-sm rounded-e-sm underline decoration-zinc-400 underline-offset-4"
-                        >
-                          {localized.title}
-                        </Link>
-                      </h3>
-                      <p className="text-zinc-700">{localized.institution}</p>
-                      <p className="text-sm text-zinc-500">
-                        {localized.venue} · {localized.role}
-                      </p>
-                      {localized.body ? (
-                        <p className="leading-relaxed text-zinc-700">
-                          {localized.body}
-                        </p>
-                      ) : null}
-                    </article>
-                  </li>
-                );
-              })}
-            </ol>
-          )}
-        </section>
+                  );
+                })}
+              </Timeline>
+            ) : (
+              <EmptyState
+                icon="article"
+                heading={locale === "ar" ? "لا توجد دراسات منشورة" : "Aucune formation publiée"}
+                body={
+                  locale === "ar"
+                    ? "تظهر الدراسات التي أتمّتها هنا."
+                    : "Les formations publiées apparaîtront ici."
+                }
+              />
+            )}
+          </section>
+        </MotionReveal>
+
+        <MotionReveal delay={180}>
+          <section aria-labelledby="career-participations" className="flex flex-col gap-8">
+            <SectionHeading
+              id="career-participations"
+              icon="globe"
+              eyebrow={locale === "ar" ? "المشاركات الدولية والإقليمية" : "Participations"}
+              title={locale === "ar" ? "المشاركات الدولية والإقليمية" : "Participations passées"}
+            />
+            {participations.length ? (
+              <Timeline ariaLabel={locale === "ar" ? "المشاركات الدولية والإقليمية" : "Participations passées"}>
+                {participations.map((entry) => {
+                  const localized = participationText(entry, locale);
+                  return (
+                    <TimelineEntry
+                      key={entry.slug}
+                      dateLabel={entry.eventDateLabel}
+                      title={localized.title}
+                      titleHref={`/${locale}/participations/${entry.slug}` as const}
+                      meta={
+                        <>
+                          <p className="font-serif text-lg font-semibold text-ink">
+                            {localized.institution}
+                          </p>
+                          <p className="text-sm text-ink-600">
+                            {localized.venue} — {localized.role}
+                          </p>
+                        </>
+                      }
+                      excerpt={localized.body}
+                    />
+                  );
+                })}
+              </Timeline>
+            ) : (
+              <EmptyState
+                icon="globe"
+                heading={locale === "ar" ? "لا توجد مشاركات منشورة" : "Aucune participation publiée"}
+                body={
+                  locale === "ar"
+                    ? "تظهر المشاركات التي أقمتها هنا."
+                    : "Les participations publiées apparaîtront ici."
+                }
+              />
+            )}
+          </section>
+        </MotionReveal>
       </main>
       <CanonicalFooter pathname={`/${locale}/career`} />
     </>

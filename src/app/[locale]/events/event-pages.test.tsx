@@ -7,6 +7,7 @@ const {
   getPublishedUpcomingEventBySlugMock,
   getParticipationRoleLabelMock,
   notFoundMock,
+  emptyContentMock,
 } = vi.hoisted(() => ({
   getPublishedUpcomingEventsMock: vi.fn(),
   getPublishedUpcomingEventBySlugMock: vi.fn(),
@@ -14,6 +15,7 @@ const {
   notFoundMock: vi.fn(() => {
     throw new Error("__NEXT_NOT_FOUND__");
   }),
+  emptyContentMock: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("@/lib/content/events", () => ({
@@ -24,6 +26,18 @@ vi.mock("@/lib/content/events", () => ({
 
 vi.mock("@/lib/content/participations", () => ({
   getParticipationRoleLabel: getParticipationRoleLabelMock,
+  getPublishedPastParticipations: emptyContentMock,
+}));
+
+vi.mock("@/lib/content/positions", () => ({
+  getPublishedPositions: emptyContentMock,
+}));
+vi.mock("@/lib/content/articles", () => ({
+  getPublishedArticles: emptyContentMock,
+}));
+vi.mock("@/lib/content/gallery", () => ({
+  getPublishedGalleryPhotos: emptyContentMock,
+  galleryPublicUrl: vi.fn(),
 }));
 
 vi.mock("@/components/demo-card", () => ({
@@ -36,6 +50,17 @@ vi.mock("next/link", () => ({
   default: ({ href, children }: { href: string; children: React.ReactNode }) => (
     <a href={href}>{children}</a>
   ),
+}));
+
+vi.mock("next/image", () => ({
+  __esModule: true,
+  default: ({ alt }: { alt: string }) => <img alt={alt} />,
+}));
+
+vi.mock("next/font/google", () => ({
+  Libre_Caslon_Text: () => ({ variable: "--font-display" }),
+  Source_Sans_3: () => ({ variable: "--font-body" }),
+  Noto_Naskh_Arabic: () => ({ variable: "--font-naskh" }),
 }));
 
 import LocalePage from "../page";

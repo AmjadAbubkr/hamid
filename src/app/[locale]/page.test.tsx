@@ -25,12 +25,40 @@ vi.mock("next/image", () => ({
   default: ({ alt }: { alt: string }) => <img alt={alt} />,
 }));
 
+const fontFactory = (name: string) => ({ variable: name });
 vi.mock("next/font/google", () => ({
-  Geist: () => ({ variable: "--font-geist-sans" }),
-  Geist_Mono: () => ({ variable: "--font-geist-mono" }),
+  Geist: () => fontFactory("--font-geist-sans"),
+  Geist_Mono: () => fontFactory("--font-geist-mono"),
+  Libre_Caslon_Text: () => fontFactory("--font-display"),
+  Source_Sans_3: () => fontFactory("--font-body"),
+  Noto_Naskh_Arabic: () => fontFactory("--font-naskh"),
 }));
 
 vi.mock("next/font/local", () => ({}));
+
+// The home page pulls every Content Item type. By mocking each content service
+// to return empty arrays, we force the hero through its hardcoded fallback
+// role copy (the explicit scenario this test was written to pin — the only
+// piece of the page that does not depend on the Editor having published
+// anything yet) and exercise every section's empty-state branch. Declared via
+// vi.hoisted so the vi.mock factories below can reference them safely.
+const { noopAsync, taglineAsync, galleryPublicUrlMock } = vi.hoisted(() => ({
+  noopAsync: vi.fn().mockResolvedValue([]),
+  taglineAsync: vi.fn().mockResolvedValue(null),
+  galleryPublicUrlMock: vi.fn().mockReturnValue(null),
+}));
+vi.mock("@/lib/content/positions", () => ({ getPublishedPositions: noopAsync }));
+vi.mock("@/lib/content/articles", () => ({ getPublishedArticles: noopAsync }));
+vi.mock("@/lib/content/gallery", () => ({
+  getPublishedGalleryPhotos: noopAsync,
+  galleryPublicUrl: galleryPublicUrlMock,
+}));
+vi.mock("@/lib/content/participations", () => ({
+  getPublishedPastParticipations: noopAsync,
+}));
+vi.mock("@/lib/content/events", () => ({
+  getPublishedUpcomingEvents: noopAsync,
+}));
 
 import LocalePage from "@/app/[locale]/page";
 
@@ -41,6 +69,9 @@ function makeParams(locale: string) {
 describe("LocalePage (src/app/[locale]/page.tsx)", () => {
   beforeEach(() => {
     notFoundMock.mockClear();
+    noopAsync.mockClear();
+    taglineAsync.mockClear();
+    galleryPublicUrlMock.mockClear();
   });
 
   it("renders the Arabic Locale home page with the official profile hero", async () => {

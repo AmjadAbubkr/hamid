@@ -18,7 +18,7 @@ export function LocaleSwitcher({ locale }: { locale: LocaleCode }) {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Choose language" className="flex items-center gap-1 rounded-md border border-[#7b5800] bg-white p-1">
+    <nav aria-label="Choose language" className="flex items-center gap-1 rounded-md border border-gold bg-surface p-1">
       {(["ar", "fr"] as const).map((targetLocale) => {
         const active = targetLocale === locale;
 
@@ -31,8 +31,8 @@ export function LocaleSwitcher({ locale }: { locale: LocaleCode }) {
             aria-current={active ? "page" : undefined}
             className={`rounded-sm px-2.5 py-1.5 text-xs font-bold tracking-wide transition-colors ${
               active
-                ? "bg-[#04162e] text-white"
-                : "text-[#04162e] hover:bg-[#fdc34d]/30"
+                ? "bg-gold text-navy"
+                : "text-ink hover:bg-gold-200/20"
             }`}
           >
             {LOCALE_META[targetLocale].name}

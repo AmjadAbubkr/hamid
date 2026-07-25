@@ -1,6 +1,9 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CanonicalFooter } from "@/components/canonical-footer";
+import { MotionReveal, PageEntrance } from "@/components/motion-reveal";
+import { ArticleCard } from "@/components/public/cards";
+import { EmptyState } from "@/components/public/empty-state";
+import { PageHeading } from "@/components/public/section-heading";
 import { getPublishedArticles } from "@/lib/content/articles";
 import { isLocaleCode, type LocaleCode } from "@/lib/i18n/locales";
 
@@ -23,54 +26,92 @@ export default async function ArticlesPage({ params }: ArticlesPageProps) {
 
   const locale = rawLocale;
   const articles = await getPublishedArticles();
+  const headingText = locale === "ar" ? "المقالات" : "Articles";
+  const eyebrow = locale === "ar" ? "كتابات وبيانات" : "Édits et déclarations";
+  const intro =
+    locale === "ar"
+      ? "مقالات وتحليلات وكتابات أخرى ينشرها حامد."
+      : "Articles, analyses et prises de position publiés par Hamid.";
+  const publishedInPrefix = locale === "ar" ? "نُشر أولاً في " : "Publié d’abord dans ";
 
   return (
     <>
-      <main className="ps-6 pe-6 mx-auto w-full max-w-3xl flex-1 py-12 text-start">
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
-          {locale === "ar" ? "المقالات" : "Articles"}
-        </h1>
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-12 px-6 py-14 text-start sm:px-8 sm:py-20">
+        <PageEntrance>
+          <PageHeading eyebrow={eyebrow} title={headingText} intro={intro} />
+        </PageEntrance>
 
-        {articles.length === 0 ? (
-          <p className="mt-4 text-zinc-600">
-            {locale === "ar" ? "لا توجد مقالات منشورة بعد." : "Aucun article publié pour le moment."}
-          </p>
-        ) : (
-          <ol className="mt-8 flex flex-col gap-5">
-            {articles.map((article) => {
-              const title = locale === "ar" ? article.titleAr : article.titleFr;
-              const publishedInName = locale === "ar"
-                ? article.publishedInNameAr
-                : article.publishedInNameFr;
-
-              return (
-                <li key={article.slug}>
-                  <article className="flex flex-col gap-2 rounded-lg border border-zinc-300 bg-white p-5">
-                    <p className="text-sm text-zinc-500">
-                      {formatPublishedDate(article.publishedDate, locale)}
-                    </p>
-                    <h2 className="text-xl font-semibold text-zinc-900">
-                      <Link
-                        href={`/${locale}/articles/${article.slug}`}
-                        className="rounded-s-sm rounded-e-sm underline decoration-zinc-400 underline-offset-4"
-                      >
-                        {title}
-                      </Link>
-                    </h2>
-                    {publishedInName ? (
-                      <p className="text-sm text-zinc-600">
-                        {locale === "ar" ? "نشر أولاً في " : "Publié d’abord dans "}
-                        {publishedInName}
-                      </p>
-                    ) : null}
-                  </article>
-                </li>
-              );
-            })}
-          </ol>
-        )}
+        <MotionReveal delay={60}>
+          {articles.length === 0 ? (
+            <EmptyState
+              icon="article"
+              heading={locale === "ar" ? "لا توجد مقالات منشورة" : "Aucun article publié"}
+              body={locale === "ar" ? "لا توجد مقالات منشورة بعد." : "Aucun article publié pour le moment."}
+            />
+          ) : (
+            <ArticlesListing
+              articles={articles.map((article) => ({
+                slug: article.slug,
+                href: `/${locale}/articles/${article.slug}` as const,
+                date: formatPublishedDate(article.publishedDate, locale),
+                title: locale === "ar" ? article.titleAr : article.titleFr,
+                publishedInName:
+                  locale === "ar" ? article.publishedInNameAr : article.publishedInNameFr,
+              }))}
+              publishedInPrefix={publishedInPrefix}
+            />
+          )}
+        </MotionReveal>
       </main>
       <CanonicalFooter pathname={`/${locale}/articles`} />
     </>
+  );
+}
+
+function ArticlesListing({
+  articles,
+  publishedInPrefix,
+}: {
+  articles: Array<{
+    slug: string;
+    href: string;
+    date: string;
+    title: string;
+    publishedInName: string | null;
+  }>;
+  publishedInPrefix: string;
+}) {
+  const [featured, ...rest] = articles;
+  return (
+    <div className="flex flex-col gap-8">
+      <ArticleCard
+        featured
+        href={featured.href}
+        date={featured.date}
+        title={featured.title}
+        publishedIn={
+          featured.publishedInName
+            ? `${publishedInPrefix}${featured.publishedInName}`
+            : null
+        }
+      />
+      {rest.length ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {rest.map((article) => (
+            <ArticleCard
+              key={article.slug}
+              href={article.href}
+              date={article.date}
+              title={article.title}
+              publishedIn={
+                article.publishedInName
+                  ? `${publishedInPrefix}${article.publishedInName}`
+                  : null
+              }
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }

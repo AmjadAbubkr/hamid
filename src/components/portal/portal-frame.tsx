@@ -8,10 +8,10 @@ export function PortalFrame({
   children: ReactNode;
 }) {
   return (
-    <main className="w-full max-w-xl p-6 flex flex-col gap-6" aria-labelledby="portal-title">
-      <header className="flex flex-col gap-2">
-        <p className="text-sm font-medium text-zinc-600">Hamid / Portal</p>
-        <h1 id="portal-title" className="text-3xl font-semibold tracking-tight text-zinc-950">
+    <main className="mx-auto w-full max-w-3xl p-6 flex flex-col gap-6" aria-labelledby="portal-title">
+      <header className="flex flex-col gap-2 border-b border-line pb-6">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gold">Hamid / Portal</p>
+        <h1 id="portal-title" className="font-serif text-3xl font-semibold tracking-tight text-ink">
           {title}
         </h1>
       </header>

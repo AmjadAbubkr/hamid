@@ -177,34 +177,34 @@ export function GalleryForm({ photo }: { photo?: GalleryPhoto }) {
   return (
     <form className="flex flex-col gap-8" onSubmit={submit}>
       {isPublished ? (
-        <p className="rounded border border-[#fdc34d] bg-[#ffdea6] p-3 text-sm text-[#04162e]">
+        <p className="rounded border border-gold-300 bg-gold-200 p-3 text-sm text-navy">
           This Gallery Photo is public. Replacing its image keeps the new file public; moving it to draft removes the public image.
         </p>
       ) : null}
 
-      <section className="flex flex-col gap-4 rounded border border-[#c5c6ce] border-t-2 border-t-[#fdc34d] bg-white p-5">
-        <label className="flex flex-col gap-2 text-sm font-semibold text-[#04162e]" htmlFor="gallery-slug">
+      <section className="flex flex-col gap-4 rounded border border-line border-t-2 border-t-gold-300 bg-surface p-5">
+        <label className="flex flex-col gap-2 text-sm font-semibold text-ink" htmlFor="gallery-slug">
           URL slug
           <input
             id="gallery-slug"
             value={fields.slug}
             onChange={(event) => changeField("slug", event.target.value)}
-            className="border-b border-[#75777e] bg-transparent px-1 py-2 text-[#191c1d] outline-none focus:border-b-2 focus:border-[#7b5800]"
+            className="border-b border-line-soft bg-transparent px-1 py-2 text-ink outline-none focus:border-b-2 focus:border-gold"
             autoCapitalize="none"
             spellCheck={false}
             required
           />
         </label>
-        <p className="text-sm text-[#44474d]">Status: {status}</p>
+        <p className="text-sm text-ink-700">Status: {status}</p>
       </section>
 
-      <section className="flex flex-col gap-4 rounded border border-[#c5c6ce] border-t-2 border-t-[#fdc34d] bg-white p-5" aria-labelledby="gallery-image-title">
+      <section className="flex flex-col gap-4 rounded border border-line border-t-2 border-t-gold-300 bg-surface p-5" aria-labelledby="gallery-image-title">
         <div>
-          <h2 id="gallery-image-title" className="font-serif text-xl font-semibold text-[#04162e]">Gallery image</h2>
-          <p className="mt-1 text-sm text-[#44474d]">JPEG, PNG, or WebP, up to 8 MB. Draft images remain private until published.</p>
+          <h2 id="gallery-image-title" className="font-serif text-xl font-semibold text-ink">Gallery image</h2>
+          <p className="mt-1 text-sm text-ink-700">JPEG, PNG, or WebP, up to 8 MB. Draft images remain private until published.</p>
         </div>
         <div
-          className="flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded border border-dashed border-[#75777e] bg-[#f3f4f5] p-4 text-center text-[#04162e]"
+          className="flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded border border-dashed border-line-soft bg-surface-low p-4 text-center text-ink"
           onDragOver={(event) => event.preventDefault()}
           onDrop={onDrop}
           onClick={() => fileInput.current?.click()}
@@ -216,7 +216,7 @@ export function GalleryForm({ photo }: { photo?: GalleryPhoto }) {
           aria-label="Gallery image upload area"
         >
           <span className="font-semibold">Drop an image here or choose a file</span>
-          <span className="text-sm text-[#44474d]">{image ? image.name : photo?.storage_path ? "Current image is kept unless you choose a replacement." : "No image selected."}</span>
+          <span className="text-sm text-ink-700">{image ? image.name : photo?.storage_path ? "Current image is kept unless you choose a replacement." : "No image selected."}</span>
         </div>
         <input
           ref={fileInput}
@@ -227,7 +227,7 @@ export function GalleryForm({ photo }: { photo?: GalleryPhoto }) {
           accept="image/jpeg,image/png,image/webp"
           onChange={(event) => chooseImage(event.target.files?.[0])}
         />
-        {imageError ? <p role="alert" className="text-sm text-[#93000a]">{imageError}</p> : null}
+        {imageError ? <p role="alert" className="text-sm text-red-300">{imageError}</p> : null}
       </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -253,26 +253,26 @@ export function GalleryForm({ photo }: { photo?: GalleryPhoto }) {
         />
       </div>
 
-      <section className="rounded border border-[#c5c6ce] border-t-2 border-t-[#fdc34d] bg-white p-5">
+      <section className="rounded border border-line border-t-2 border-t-gold-300 bg-surface p-5">
         <TextField label="Date taken" id="gallery-taken-date" type="date" value={fields.taken_date} onChange={(value) => changeField("taken_date", value)} />
       </section>
 
-      {message ? <p role="alert" className="rounded border border-[#c5c6ce] bg-[#f3f4f5] p-3 text-sm text-[#191c1d]">{message}</p> : null}
+      {message ? <p role="alert" className="rounded border border-line bg-surface-low p-3 text-sm text-ink">{message}</p> : null}
       <div className="flex flex-wrap gap-3">
-        <button type="submit" disabled={saving || publishing || unpublishing} className="rounded bg-[#04162e] px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">
+        <button type="submit" disabled={saving || publishing || unpublishing} className="rounded bg-gold px-4 py-2 font-semibold text-navy disabled:cursor-not-allowed disabled:opacity-60">
           {saving ? "Saving..." : isPublished ? "Save changes" : "Save as draft"}
         </button>
         {!isPublished ? (
-          <button type="button" disabled={!canPublish || saving || publishing || unpublishing} onClick={() => void save("publish")} className="rounded border border-[#7b5800] px-4 py-2 font-semibold text-[#04162e] disabled:cursor-not-allowed disabled:opacity-60">
+          <button type="button" disabled={!canPublish || saving || publishing || unpublishing} onClick={() => void save("publish")} className="rounded border border-gold px-4 py-2 font-semibold text-gold disabled:cursor-not-allowed disabled:opacity-60">
             {publishing ? "Publishing..." : "Publish"}
           </button>
         ) : (
-          <button type="button" disabled={saving || publishing || unpublishing} onClick={() => void save("unpublish")} className="rounded border border-[#7b5800] px-4 py-2 font-semibold text-[#04162e] disabled:cursor-not-allowed disabled:opacity-60">
+          <button type="button" disabled={saving || publishing || unpublishing} onClick={() => void save("unpublish")} className="rounded border border-gold px-4 py-2 font-semibold text-gold disabled:cursor-not-allowed disabled:opacity-60">
             {unpublishing ? "Moving to draft..." : "Move to draft"}
           </button>
         )}
       </div>
-      {!photo ? <p className="text-sm text-[#44474d]">Save the draft before publishing it.</p> : null}
+      {!photo ? <p className="text-sm text-ink-700">Save the draft before publishing it.</p> : null}
     </form>
   );
 }
@@ -298,8 +298,8 @@ function LocalePane({
 }) {
   const suffix = locale.toLowerCase();
   return (
-    <section dir={direction} className="flex flex-col gap-4 rounded border border-[#c5c6ce] border-t-2 border-t-[#fdc34d] bg-white p-5">
-      <h2 className="font-serif text-xl font-semibold text-[#04162e]">{locale}</h2>
+    <section dir={direction} className="flex flex-col gap-4 rounded border border-line border-t-2 border-t-gold-300 bg-surface p-5">
+      <h2 className="font-serif text-xl font-semibold text-ink">{locale}</h2>
       <TextField label={`${locale} caption`} id={`gallery-caption-${suffix}`} value={caption} onChange={onCaptionChange} />
       <TextField label={`${locale} photographer credit`} id={`gallery-credit-${suffix}`} value={credit} onChange={onCreditChange} optional />
       <TextField label={`${locale} category`} id={`gallery-category-${suffix}`} value={category} onChange={onCategoryChange} optional />
@@ -323,14 +323,14 @@ function TextField({
   type?: "text" | "date";
 }) {
   return (
-    <label className="flex flex-col gap-2 text-sm font-semibold text-[#04162e]" htmlFor={id}>
+    <label className="flex flex-col gap-2 text-sm font-semibold text-ink" htmlFor={id}>
       {label}{optional ? " (optional)" : ""}
       <input
         id={id}
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="border-b border-[#75777e] bg-transparent px-1 py-2 text-[#191c1d] outline-none focus:border-b-2 focus:border-[#7b5800]"
+        className="border-b border-line-soft bg-transparent px-1 py-2 text-ink outline-none focus:border-b-2 focus:border-gold"
       />
     </label>
   );

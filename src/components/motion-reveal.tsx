@@ -27,9 +27,18 @@ export function PageEntrance({ children, className, delay = 0 }: MotionProps) {
   useEffect(() => {
     if (prefersReducedMotion()) return;
 
-    setMotionEnabled(true);
-    const frame = window.requestAnimationFrame(() => setVisible(true));
-    return () => window.cancelAnimationFrame(frame);
+    // Defer both setState calls out of the synchronous effect body to avoid
+    // cascading renders. The first frame lets us opt into motion, the second
+    // flips visibility so the transition actually runs.
+    let visibleId = 0;
+    const enabledId = window.requestAnimationFrame(() => {
+      setMotionEnabled(true);
+      visibleId = window.requestAnimationFrame(() => setVisible(true));
+    });
+    return () => {
+      window.cancelAnimationFrame(enabledId);
+      window.cancelAnimationFrame(visibleId);
+    };
   }, []);
 
   return (
