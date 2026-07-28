@@ -18,6 +18,8 @@ function isRecoveryRedirect(path: unknown): path is string {
   return url.origin === window.location.origin && url.pathname === "/api/portal/recovery-bridge" && url.search === "";
 }
 
+const developmentEditorEmail = process.env.NEXT_PUBLIC_DEVELOPMENT_EDITOR_EMAIL;
+
 export function PasskeyLoginControls() {
   const router = useRouter();
   const { t } = usePortalLocale();
@@ -74,8 +76,11 @@ export function DevelopmentPasswordLoginControls() {
     setAction("working");
     setMessage("");
     try {
+      if (!developmentEditorEmail) {
+        throw new Error("NEXT_PUBLIC_DEVELOPMENT_EDITOR_EMAIL is not configured.");
+      }
       const { error } = await getSupabaseClient().auth.signInWithPassword({
-        email: "amjadabubkr5@gmail.com",
+        email: developmentEditorEmail,
         password,
       });
       if (error) throw error;
