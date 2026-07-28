@@ -145,7 +145,7 @@ export function PasswordResetRequestForm() {
         {t("Email")}
         <input id="portal-reset-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" className="rounded border border-line bg-surface px-3 py-2 text-ink" required />
       </label>
-      <button type="submit" disabled={action === "working"} className="rounded bg-ink px-4 py-3 text-base font-semibold text-white disabled:opacity-60">
+      <button type="submit" disabled={action === "working"} className="rounded bg-zinc-950 px-4 py-3 text-base font-semibold text-white disabled:opacity-60">
         {action === "working" ? t("Sending…") : t("Send password-reset link")}
       </button>
       {message ? <p role="status" className="text-sm text-muted">{message}</p> : null}
@@ -193,7 +193,7 @@ export function PasswordUpdateForm() {
         {t("Confirm new password")}
         <input id="confirm-new-password" type="password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="new-password" minLength={12} className="rounded border border-line bg-surface px-3 py-2 text-ink" required />
       </label>
-      <button type="submit" disabled={action === "working"} className="rounded bg-ink px-4 py-3 text-base font-semibold text-white disabled:opacity-60">
+      <button type="submit" disabled={action === "working"} className="rounded bg-zinc-950 px-4 py-3 text-base font-semibold text-white disabled:opacity-60">
         {action === "working" ? t("Saving…") : t("Set new password")}
       </button>
       {action === "error" ? <p role="alert" className="text-sm text-red-700">{message}</p> : null}

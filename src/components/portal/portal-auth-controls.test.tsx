@@ -74,6 +74,8 @@ describe("Portal authentication controls", () => {
     supabaseAuth.resetPasswordForEmail.mockResolvedValue({ data: {}, error: null });
     render(<EmailAccessControls />);
 
+    expect(screen.getByRole("button", { name: "Set up or reset password" })).toHaveClass("bg-zinc-950", "text-white");
+
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "editor@example.com" } });
     fireEvent.click(screen.getByRole("button", { name: "Set up or reset password" }));
 
