@@ -21,7 +21,7 @@ export default async function EducationPreviewPage({ params }: { params: Promise
 
   const { data, error } = await supabase
     .from("education_entry")
-    .select("slug, status, degree_ar, degree_fr, institution_ar, institution_fr, honours_ar, honours_fr, start_date, end_date, location")
+    .select("slug, status, degree_ar, degree_fr, degree_en, institution_ar, institution_fr, institution_en, honours_ar, honours_fr, honours_en, start_date, end_date, location")
     .eq("slug", slug)
     .eq("author_editor_id", editorId)
     .maybeSingle();

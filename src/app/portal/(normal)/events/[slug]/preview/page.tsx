@@ -23,7 +23,7 @@ export default async function EventPreviewPage({ params }: { params: Promise<{ s
 
   const { data, error } = await supabase
     .from("upcoming_event")
-    .select("slug, status, title_ar, title_fr, body_ar, body_fr, event_date, venue_ar, venue_fr, institution_ar, institution_fr, role, role_other_ar, role_other_fr, registration_url")
+    .select("slug, status, title_ar, title_fr, title_en, body_ar, body_fr, body_en, event_date, venue_ar, venue_fr, venue_en, institution_ar, institution_fr, institution_en, role, role_other_ar, role_other_fr, role_other_en, registration_url, image_path")
     .eq("slug", slug)
     .eq("author_editor_id", editorId)
     .maybeSingle();

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { normalizeSlugInput } from "@/lib/content/slug";
 import { PublishRequirements } from "./publish-requirements";
+import { DeleteContentButton } from "./delete-content-button";
 import { usePortalLocale } from "./portal-locale-provider";
 
 export type PositionHeld = {
@@ -300,6 +301,7 @@ export function PositionForm({ position }: { position?: PositionHeld }) {
           {publishing ? t("Publishing…") : t("Publish")}
         </button>
       </div>
+      {position ? <DeleteContentButton itemType="position_held" id={position.id} returnTo="/portal/positions" /> : null}
       {!position ? <p className="text-sm text-zinc-600">{t("Save the draft before publishing it.")}</p> : null}
     </form>
   );

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import { CanonicalFooter } from "@/components/canonical-footer";
 import {
   getParticipationRoleLabel,
@@ -7,12 +8,11 @@ import {
 } from "@/lib/content/participations";
 import { isLocaleCode, LOCALES } from "@/lib/i18n/locales";
 import { safeHttpUrl } from "@/lib/safe-http-url";
+import { contentImagePublicUrl } from "@/lib/content/content-image";
 
 type ParticipationDetailPageProps = {
   params: Promise<{ locale: string; slug: string }>;
 };
-
-export const dynamicParams = false;
 
 export async function generateStaticParams() {
   const participations = await getPublishedPastParticipations();
@@ -34,6 +34,7 @@ export default async function ParticipationDetailPage({
   const locale = rawLocale;
   const participation = await getPublishedPastParticipationBySlug(slug);
   if (!participation) notFound();
+  const imageUrl = contentImagePublicUrl(participation.imagePath);
 
   const title = locale === "ar" ? participation.titleAr : participation.titleFr;
   const body = locale === "ar" ? participation.bodyAr : participation.bodyFr;
@@ -59,6 +60,7 @@ export default async function ParticipationDetailPage({
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
             {title}
           </h1>
+          {imageUrl ? <Image src={imageUrl} alt="" width={1200} height={675} className="aspect-video w-full rounded-lg object-cover outline outline-1 outline-black/10" /> : null}
           <dl className="grid gap-3 text-zinc-700">
             <div>
               <dt className="text-sm text-zinc-500">

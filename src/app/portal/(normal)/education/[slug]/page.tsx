@@ -19,7 +19,7 @@ export default async function EditEducationPage({ params }: { params: Promise<{ 
 
   const { data, error } = await supabase
     .from("education_entry")
-    .select("id, slug, status, degree_ar, degree_fr, institution_ar, institution_fr, honours_ar, honours_fr, start_date, end_date, location, published_at")
+    .select("id, slug, status, degree_ar, degree_fr, degree_en, institution_ar, institution_fr, institution_en, honours_ar, honours_fr, honours_en, start_date, end_date, location, published_at")
     .eq("slug", slug)
     .eq("author_editor_id", editorId)
     .maybeSingle();

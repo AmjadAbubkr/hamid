@@ -21,7 +21,7 @@ export default async function PositionPreviewPage({ params }: { params: Promise<
 
   const { data, error } = await supabase
     .from("position_held")
-    .select("slug, status, title_ar, title_fr, body_ar, body_fr, institution, start_date, end_date, location")
+    .select("slug, status, title_ar, title_fr, title_en, body_ar, body_fr, body_en, institution, start_date, end_date, location")
     .eq("slug", slug)
     .eq("author_editor_id", editorId)
     .maybeSingle();

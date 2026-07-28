@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { normalizeSlugInput } from "@/lib/content/slug";
 import { PublishRequirements } from "./publish-requirements";
+import { DeleteContentButton } from "./delete-content-button";
 
 export type EducationEntry = {
   id: string;
@@ -305,6 +306,7 @@ export function EducationForm({ education }: { education?: EducationEntry }) {
           {publishing ? "Publishing..." : "Publish"}
         </button>
       </div>
+      {education ? <DeleteContentButton itemType="education_entry" id={education.id} returnTo="/portal/education" /> : null}
       {!education ? <p className="text-sm text-zinc-600">Save the draft before publishing it.</p> : null}
     </form>
   );

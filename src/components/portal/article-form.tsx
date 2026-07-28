@@ -6,6 +6,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { normalizeSlugInput } from "@/lib/content/slug";
 import { PublishRequirements } from "./publish-requirements";
+import { DeleteContentButton } from "./delete-content-button";
 import { usePortalLocale } from "./portal-locale-provider";
 
 export type Article = {
@@ -99,19 +100,14 @@ export function ArticleForm({ article }: { article?: Article }) {
   const hasInstitutionalTitle = /\bstatement\b|\bcommuniqu(?:e|[\u00e9\u00c9])(?=\s|$|[.,:;!?])/i.test(
     `${fields.title_ar} ${fields.title_fr} ${fields.title_en}`,
   );
-  const canPublish = Boolean(article?.id)
-    && isFilled(fields.title_ar)
-    && isFilled(fields.title_fr)
-    && isFilled(fields.title_en)
-    && isFilled(fields.body_ar)
-    && isFilled(fields.body_fr)
-    && isFilled(fields.body_en)
-    && isFilled(fields.published_date)
-    && isCompleteAcrossLocales(fields.published_in_name_ar, fields.published_in_name_fr, fields.published_in_name_en);
-  const publishRequirements = [
+  const articleLocales = [[fields.title_ar, fields.body_ar], [fields.title_fr, fields.body_fr], [fields.title_en, fields.body_en]];
+  const hasCompleteLocale = articleLocales.some(([title, body]) => isFilled(title) && isFilled(body));
+  const hasPartialLocale = articleLocales.some(([title, body]) => isFilled(title) !== isFilled(body));
+  const canPublish = Boolean(article?.id) && hasCompleteLocale && !hasPartialLocale && isFilled(fields.published_date);
+  const publishRequirements = isPublished ? [] : [
     !article ? "Save this draft before publishing." : "",
-    !isFilled(fields.title_ar) ? "Arabic title" : "", !isFilled(fields.title_fr) ? "French title" : "", !isFilled(fields.title_en) ? "English title" : "",
-    !isFilled(fields.body_ar) ? "Arabic body" : "", !isFilled(fields.body_fr) ? "French body" : "", !isFilled(fields.body_en) ? "English body" : "",
+    !hasCompleteLocale ? "A title and body in Arabic, French, or English" : "",
+    hasPartialLocale ? "Complete the title and body for each language you start" : "",
     !isFilled(fields.published_date) ? "Original publication date" : "",
     !isCompleteAcrossLocales(fields.published_in_name_ar, fields.published_in_name_fr, fields.published_in_name_en) ? "Publication name in Arabic, French, and English — or leave all three blank" : "",
   ].filter(Boolean);
@@ -271,6 +267,7 @@ export function ArticleForm({ article }: { article?: Article }) {
           {t("Copy article link")}
         </button>
       </div>
+      {article ? <DeleteContentButton itemType="article" id={article.id} returnTo="/portal/articles" /> : null}
       {shareMessage ? <p role="status" className="text-sm text-zinc-700">{shareMessage}</p> : null}
       {!article ? <p className="text-sm text-zinc-600">Save the draft before publishing it.</p> : null}
     </form>

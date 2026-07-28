@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import { CanonicalFooter } from "@/components/canonical-footer";
 import {
   getPublishedUpcomingEventBySlug,
@@ -7,12 +8,11 @@ import {
 import { getParticipationRoleLabel } from "@/lib/content/participations";
 import { isLocaleCode, LOCALES, type LocaleCode } from "@/lib/i18n/locales";
 import { safeHttpUrl } from "@/lib/safe-http-url";
+import { contentImagePublicUrl } from "@/lib/content/content-image";
 
 type EventDetailPageProps = {
   params: Promise<{ locale: string; slug: string }>;
 };
-
-export const dynamicParams = false;
 
 export async function generateStaticParams() {
   const events = await getPublishedUpcomingEvents();
@@ -51,6 +51,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
     event.roleOtherEn,
   );
   const registrationUrl = safeHttpUrl(event.registrationUrl);
+  const imageUrl = contentImagePublicUrl(event.imagePath);
 
   return (
     <>
@@ -62,6 +63,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
             {title}
           </h1>
+          {imageUrl ? <Image src={imageUrl} alt="" width={1200} height={675} className="aspect-video w-full rounded-lg object-cover outline outline-1 outline-black/10" /> : null}
           <dl className="grid gap-3 text-zinc-700">
             <div>
               <dt className="text-sm text-zinc-500">
