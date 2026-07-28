@@ -11,6 +11,7 @@ import {
   RecoveryCodeDisplay,
   RecoveryCodeForm,
 } from "@/components/portal/portal-auth-controls";
+import { EmailAccessControls } from "@/components/portal/email-access-controls";
 
 const replace = vi.fn();
 const supabaseAuth = {
@@ -67,6 +68,31 @@ describe("Portal authentication controls", () => {
       expect(supabaseAuth.signInWithPassword).toHaveBeenCalledWith({ email: "editor@example.com", password: "secure-password" });
       expect(replace).toHaveBeenCalledWith("/portal");
     });
+  });
+
+  it("sends a secure password setup link before a first-time Editor sets a password", async () => {
+    supabaseAuth.resetPasswordForEmail.mockResolvedValue({ data: {}, error: null });
+    render(<EmailAccessControls />);
+
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "editor@example.com" } });
+    fireEvent.click(screen.getByRole("button", { name: "Set up or reset password" }));
+
+    await waitFor(() => {
+      expect(supabaseAuth.resetPasswordForEmail).toHaveBeenCalledWith(
+        "editor@example.com",
+        expect.objectContaining({ redirectTo: `${window.location.origin}/auth/callback?next=/portal/reset-password` }),
+      );
+      expect(screen.getByText(/secure password link has been sent/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows password sign-in only after an existing Editor chooses it", () => {
+    render(<EmailAccessControls />);
+
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "editor@example.com" } });
+    fireEvent.click(screen.getByRole("button", { name: "I already have a password" }));
+
+    expect(screen.getByLabelText("Password")).toBeInTheDocument();
   });
 
   it("does not disclose whether an email address has a Portal account during password reset", async () => {
