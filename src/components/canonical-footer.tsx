@@ -8,15 +8,7 @@ type CanonicalFooterProps = {
 
 function getSiteOrigin() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  return new URL(siteUrl).origin;
-}
-
-function isLocalhostOrigin(origin: string) {
-  return (
-    origin === "http://localhost:3000" ||
-    origin === "http://127.0.0.1:3000" ||
-    origin === "http://localhost:3000/"
-  );
+  return URL.canParse(siteUrl) ? new URL(siteUrl).origin : "http://localhost:3000";
 }
 
 /*
@@ -29,7 +21,6 @@ function isLocalhostOrigin(origin: string) {
 export function CanonicalFooter({ pathname, locale }: CanonicalFooterProps) {
   const origin = getSiteOrigin();
   const canonical = new URL(pathname, origin).toString();
-  const showCanonical = !isLocalhostOrigin(origin);
   const roleLine = textFor(locale, {
     ar: "دبلوماسي وسياسي تشادي — الملف الشخصي الرسمي",
     fr: "Diplomate et homme politique tchadien — Profil public officiel",
@@ -76,9 +67,7 @@ export function CanonicalFooter({ pathname, locale }: CanonicalFooterProps) {
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gold">
             {officialDocLine}
           </p>
-          {showCanonical ? (
-            <p className="font-mono text-xs text-ink-600 break-all">{canonical}</p>
-          ) : null}
+          <p className="font-mono text-xs text-ink-600 break-all">{canonical}</p>
         </div>
       </div>
     </footer>

@@ -38,6 +38,71 @@ async function createEditor(db: PGlite) {
   return { editorId: editor.rows[0].id, authUserId: authUser.rows[0].id };
 }
 
+async function fillEnglishFixture(db: PGlite, contentType: string, id: string) {
+  const fixtures: Record<string, string> = {
+    position_held: `
+      UPDATE position_held
+      SET title_en = 'en-title',
+          body_en = CASE
+            WHEN body_ar IS NOT NULL AND body_fr IS NOT NULL THEN 'en-body'
+            ELSE NULL
+          END
+      WHERE id = $1;
+    `,
+    education_entry: `
+      UPDATE education_entry
+      SET degree_en = 'degree en',
+          institution_en = 'institution en',
+          honours_en = CASE
+            WHEN honours_ar IS NOT NULL AND honours_fr IS NOT NULL THEN 'honours en'
+            ELSE NULL
+          END
+      WHERE id = $1;
+    `,
+    past_participation: `
+      UPDATE past_participation
+      SET title_en = 'en-title',
+          body_en = CASE
+            WHEN body_ar IS NOT NULL AND body_fr IS NOT NULL THEN 'en-body'
+            ELSE NULL
+          END,
+          venue_en = 'venue en',
+          institution_en = 'institution en',
+          role_other_en = CASE
+            WHEN role_other_ar IS NOT NULL AND role_other_fr IS NOT NULL THEN 'other role en'
+            ELSE NULL
+          END
+      WHERE id = $1;
+    `,
+    upcoming_event: `
+      UPDATE upcoming_event
+      SET title_en = 'en-title',
+          body_en = CASE
+            WHEN body_ar IS NOT NULL AND body_fr IS NOT NULL THEN 'en-body'
+            ELSE NULL
+          END,
+          venue_en = 'venue en',
+          institution_en = 'institution en',
+          role_other_en = CASE
+            WHEN role_other_ar IS NOT NULL AND role_other_fr IS NOT NULL THEN 'other role en'
+            ELSE NULL
+          END
+      WHERE id = $1;
+    `,
+    tagline: `UPDATE tagline SET tagline_en = 'tagline en' WHERE id = $1;`,
+  };
+
+  const fixture = fixtures[contentType];
+  if (fixture) {
+    await db.query(fixture, [id]);
+  }
+}
+
+async function publishContentItem(db: PGlite, contentType: string, id: string) {
+  await fillEnglishFixture(db, contentType, id);
+  return db.query(`SELECT publish_content_item('${contentType}', $1);`, [id]);
+}
+
 describe("Content Item schema (ticket 02)", () => {
   let db: PGlite;
 
@@ -98,8 +163,10 @@ describe("Content Item schema (ticket 02)", () => {
             'published'::public.content_item_status,
             'ar-title',
             'fr-title',
+            'en-title',
             'ar-body',
             'fr-body',
+            'en-body',
             now()
           );
         `),
@@ -121,8 +188,10 @@ describe("Content Item schema (ticket 02)", () => {
         "status",
         "title_ar",
         "title_fr",
+        "title_en",
         "body_ar",
         "body_fr",
+        "body_en",
         "author_editor_id",
         "created_at",
         "updated_at",
@@ -181,7 +250,7 @@ describe("Content Item schema (ticket 02)", () => {
       ({ editorId, authUserId } = await createEditor(db));
     });
 
-    it("publishes with bilingual titles and required Position Held fields", async () => {
+    it("publishes with all three Locale titles and required Position Held fields", async () => {
       const ins = await db.query<{ id: string }>(`
         INSERT INTO position_held (slug, title_ar, title_fr, institution, start_date, location, author_editor_id)
         VALUES ('amb-tchad', 'ar-title', 'fr-title', 'Ministry', '2026-05-22', 'N''Djamena', $1)
@@ -190,7 +259,7 @@ describe("Content Item schema (ticket 02)", () => {
       const id = ins.rows[0].id;
 
       await asAuthenticated(db, authUserId);
-      await db.query(`SELECT publish_content_item('position_held', $1);`, [id]);
+      await publishContentItem(db, "position_held", id);
 
       const r = await db.query<{ status: string; published_at: string | null }>(`
         SELECT status, published_at FROM position_held WHERE id = $1;
@@ -209,11 +278,24 @@ describe("Content Item schema (ticket 02)", () => {
 
       await asAuthenticated(db, authUserId);
       await expect(
-        db.query(`SELECT publish_content_item('position_held', $1);`, [id]),
+        publishContentItem(db, "position_held", id),
       ).rejects.toThrow(/arabic.*title/i);
     });
 
-    it("allows an optional summary to be empty in both Locales", async () => {
+    it("raises when English title is empty", async () => {
+      const ins = await db.query<{ id: string }>(`
+        INSERT INTO position_held (slug, title_ar, title_fr, institution, start_date, location, author_editor_id)
+        VALUES ('no-en-title', 'ar-title', 'fr-title', 'Ministry', '2026-05-22', 'N''Djamena', $1)
+        RETURNING id;
+      `, [editorId]);
+
+      await asAuthenticated(db, authUserId);
+      await expect(
+        db.query(`SELECT publish_content_item('position_held', $1);`, [ins.rows[0].id]),
+      ).rejects.toThrow(/english.*title/i);
+    });
+
+    it("allows an optional summary to be empty in all Locales", async () => {
       const ins = await db.query<{ id: string }>(`
         INSERT INTO position_held (slug, title_ar, title_fr, body_ar, body_fr, institution, start_date, location, author_editor_id)
         VALUES ('no-summary', 'ar-title', 'fr-title', NULL, NULL, 'Ministry', '2026-05-22', 'N''Djamena', $1)
@@ -222,7 +304,7 @@ describe("Content Item schema (ticket 02)", () => {
       const id = ins.rows[0].id;
 
       await asAuthenticated(db, authUserId);
-      await expect(db.query(`SELECT publish_content_item('position_held', $1);`, [id])).resolves.toBeDefined();
+      await expect(publishContentItem(db, "position_held", id)).resolves.toBeDefined();
     });
 
     it("rejects an optional summary supplied in only one Locale", async () => {
@@ -234,7 +316,7 @@ describe("Content Item schema (ticket 02)", () => {
 
       await asAuthenticated(db, authUserId);
       await expect(
-        db.query(`SELECT publish_content_item('position_held', $1);`, [ins.rows[0].id]),
+        publishContentItem(db, "position_held", ins.rows[0].id),
       ).rejects.toThrow(/french.*body/i);
     });
 
@@ -247,7 +329,7 @@ describe("Content Item schema (ticket 02)", () => {
 
       await asAuthenticated(db, authUserId);
       await expect(
-        db.query(`SELECT publish_content_item('position_held', $1);`, [ins.rows[0].id]),
+        publishContentItem(db, "position_held", ins.rows[0].id),
       ).rejects.toThrow(/start date/i);
     });
 
@@ -320,7 +402,7 @@ describe("Content Item schema (ticket 02)", () => {
       `, [editorId]);
       const id = ins.rows[0].id;
       await asAuthenticated(db, authUserId);
-      await db.query(`SELECT publish_content_item('position_held', $1);`, [id]);
+      await publishContentItem(db, "position_held", id);
 
       await expect(
         db.query(`UPDATE position_held SET published_at = NULL WHERE id = $1;`, [id]),
@@ -354,7 +436,7 @@ describe("Content Item schema (ticket 02)", () => {
       `, [editorId]);
       const id = ins.rows[0].id;
       await asAuthenticated(db, authUserId);
-      await db.query(`SELECT publish_content_item('position_held', $1);`, [id]);
+      await publishContentItem(db, "position_held", id);
 
       await expect(
         db.query(`UPDATE position_held SET title_fr = '' WHERE id = $1;`, [id]),
@@ -382,7 +464,7 @@ describe("Content Item schema (ticket 02)", () => {
         SELECT id FROM position_held WHERE slug = 'pub-row';
       `);
       await asAuthenticated(db, authUserId);
-      await db.query(`SELECT publish_content_item('position_held', $1);`, [pub.rows[0].id]);
+      await publishContentItem(db, "position_held", pub.rows[0].id);
       await asPostgres(db);
     });
 
@@ -440,8 +522,8 @@ describe("Content Item schema (ticket 02)", () => {
     it("authenticated Editor cannot publish another Editor's item", async () => {
       const other = await createEditor(db);
       const item = await db.query<{ id: string }>(`
-        INSERT INTO position_held (slug, title_ar, title_fr, institution, start_date, location, author_editor_id)
-        VALUES ('other-editor-draft', 'ar', 'fr', 'M', '2026-05-22', 'N''Djamena', $1)
+        INSERT INTO position_held (slug, title_ar, title_fr, title_en, institution, start_date, location, author_editor_id)
+        VALUES ('other-editor-draft', 'ar', 'fr', 'en', 'M', '2026-05-22', 'N''Djamena', $1)
         RETURNING id;
       `, [other.editorId]);
 
@@ -515,7 +597,7 @@ describe("Content Item schema (ticket 02)", () => {
       `, [editorId]);
 
       await asAuthenticated(db, authUserId);
-      await db.query(`SELECT publish_content_item('education_entry', $1);`, [inserted.rows[0].id]);
+      await publishContentItem(db, "education_entry", inserted.rows[0].id);
 
       const published = await db.query<{ status: string; published_at: string | null }>(`
         SELECT status, published_at FROM education_entry WHERE id = $1;
@@ -539,7 +621,7 @@ describe("Content Item schema (ticket 02)", () => {
 
       await asAuthenticated(db, authUserId);
       await expect(
-        db.query(`SELECT publish_content_item('education_entry', $1);`, [inserted.rows[0].id]),
+        publishContentItem(db, "education_entry", inserted.rows[0].id),
       ).rejects.toThrow(/french.*body/i);
     });
 
@@ -558,7 +640,7 @@ describe("Content Item schema (ticket 02)", () => {
 
       await asAuthenticated(db, authUserId);
       await expect(
-        db.query(`SELECT publish_content_item('education_entry', $1);`, [inserted.rows[0].id]),
+        publishContentItem(db, "education_entry", inserted.rows[0].id),
       ).rejects.toThrow(/end date/i);
     });
 
@@ -577,7 +659,7 @@ describe("Content Item schema (ticket 02)", () => {
       `);
 
       await asAuthenticated(db, authUserId);
-      await db.query(`SELECT publish_content_item('education_entry', $1);`, [publicRow.rows[0].id]);
+      await publishContentItem(db, "education_entry", publicRow.rows[0].id);
       await asAnon(db);
 
       const visible = await db.query<{ slug: string }>(`
@@ -663,7 +745,7 @@ describe("Content Item schema (ticket 02)", () => {
       `, [editorId]);
 
       await asAuthenticated(db, authUserId);
-      await db.query(`SELECT publish_content_item('past_participation', $1);`, [inserted.rows[0].id]);
+      await publishContentItem(db, "past_participation", inserted.rows[0].id);
 
       const published = await db.query<{ status: string; published_at: string | null }>(`
         SELECT status, published_at FROM past_participation WHERE id = $1;
@@ -689,7 +771,7 @@ describe("Content Item schema (ticket 02)", () => {
 
       await asAuthenticated(db, authUserId);
       await expect(
-        db.query(`SELECT publish_content_item('past_participation', $1);`, [inserted.rows[0].id]),
+        publishContentItem(db, "past_participation", inserted.rows[0].id),
       ).rejects.toThrow(/other role/i);
     });
 
@@ -707,7 +789,7 @@ describe("Content Item schema (ticket 02)", () => {
       `, [editorId]);
 
       await asAuthenticated(db, authUserId);
-      await db.query(`SELECT publish_content_item('past_participation', $1);`, [inserted.rows[0].id]);
+      await publishContentItem(db, "past_participation", inserted.rows[0].id);
       await expect(
         db.query(`UPDATE past_participation SET title_fr = 'updated' WHERE id = $1;`, [inserted.rows[0].id]),
       ).rejects.toThrow(/immutable/i);
@@ -728,7 +810,7 @@ describe("Content Item schema (ticket 02)", () => {
       `);
 
       await asAuthenticated(db, authUserId);
-      await db.query(`SELECT publish_content_item('past_participation', $1);`, [publicRow.rows[0].id]);
+      await publishContentItem(db, "past_participation", publicRow.rows[0].id);
       await asAnon(db);
 
       const visible = await db.query<{ slug: string }>(`
@@ -806,7 +888,7 @@ describe("Content Item schema (ticket 02)", () => {
       `, [editorId]);
 
       await asAuthenticated(db, authUserId);
-      await db.query(`SELECT publish_content_item('upcoming_event', $1);`, [inserted.rows[0].id]);
+      await publishContentItem(db, "upcoming_event", inserted.rows[0].id);
 
       const published = await db.query<{ status: string; published_at: string | null }>(`
         SELECT status, published_at FROM upcoming_event WHERE id = $1;
@@ -830,7 +912,7 @@ describe("Content Item schema (ticket 02)", () => {
 
       await asAuthenticated(db, authUserId);
       await expect(
-        db.query(`SELECT publish_content_item('upcoming_event', $1);`, [inserted.rows[0].id]),
+        publishContentItem(db, "upcoming_event", inserted.rows[0].id),
       ).rejects.toThrow(/french.*body/i);
     });
 
@@ -848,7 +930,7 @@ describe("Content Item schema (ticket 02)", () => {
       `, [editorId]);
 
       await asAuthenticated(db, authUserId);
-      await db.query(`SELECT publish_content_item('upcoming_event', $1);`, [inserted.rows[0].id]);
+      await publishContentItem(db, "upcoming_event", inserted.rows[0].id);
       await expect(
         db.query(`UPDATE upcoming_event SET status = 'draft', published_at = null WHERE id = $1;`, [inserted.rows[0].id]),
       ).rejects.toThrow(/cannot return to draft/i);
@@ -880,7 +962,7 @@ describe("Content Item schema (ticket 02)", () => {
       `, [editorId]);
 
       await asAuthenticated(db, authUserId);
-      await db.query(`SELECT publish_content_item('upcoming_event', $1);`, [expired.rows[0].id]);
+      await publishContentItem(db, "upcoming_event", expired.rows[0].id);
       await asPostgres(db);
 
       await db.query(`
@@ -966,7 +1048,7 @@ describe("Content Item schema (ticket 02)", () => {
       `);
 
       await asAuthenticated(db, authUserId);
-      await db.query(`SELECT publish_content_item('upcoming_event', $1);`, [publicEvent.rows[0].id]);
+      await publishContentItem(db, "upcoming_event", publicEvent.rows[0].id);
       await asAnon(db);
 
       const visible = await db.query<{ slug: string }>(`
@@ -1019,11 +1101,14 @@ describe("Content Item schema (ticket 02)", () => {
       for (const required of [
         "title_ar",
         "title_fr",
+        "title_en",
         "body_ar",
         "body_fr",
+        "body_en",
         "published_in_url",
         "published_in_name_ar",
         "published_in_name_fr",
+        "published_in_name_en",
         "published_date",
         "author_editor_id",
       ]) {
@@ -1045,19 +1130,19 @@ describe("Content Item schema (ticket 02)", () => {
     it("publishes a complete Article through the fixed RPC branch", async () => {
       const inserted = await db.query<{ id: string }>(`
         INSERT INTO article (
-          slug, title_ar, title_fr, body_ar, body_fr, published_date,
-          published_in_url, published_in_name_ar, published_in_name_fr,
+          slug, title_ar, title_fr, title_en, body_ar, body_fr, body_en, published_date,
+          published_in_url, published_in_name_ar, published_in_name_fr, published_in_name_en,
           author_editor_id
         )
         VALUES (
-          'policy-brief', 'title ar', 'title fr', '<p>body ar</p>', '<p>body fr</p>', '2025-05-01',
-          'https://example.test/article', 'source ar', 'source fr', $1
+          'policy-brief', 'title ar', 'title fr', 'title en', '<p>body ar</p>', '<p>body fr</p>', '<p>body en</p>', '2025-05-01',
+          'https://example.test/article', 'source ar', 'source fr', 'source en', $1
         )
         RETURNING id;
       `, [editorId]);
 
       await asAuthenticated(db, authUserId);
-      await db.query(`SELECT publish_content_item('article', $1);`, [inserted.rows[0].id]);
+      await publishContentItem(db, "article", inserted.rows[0].id);
 
       const published = await db.query<{ status: string; published_at: string | null }>(`
         SELECT status, published_at FROM article WHERE id = $1;
@@ -1069,27 +1154,27 @@ describe("Content Item schema (ticket 02)", () => {
     it("rejects incomplete body and one-sided publication names at publication", async () => {
       const missingBody = await db.query<{ id: string }>(`
         INSERT INTO article (
-          slug, title_ar, title_fr, body_ar, published_date, author_editor_id
+          slug, title_ar, title_fr, title_en, body_ar, published_date, author_editor_id
         ) VALUES (
-          'missing-body', 'title ar', 'title fr', '<p>body ar</p>', '2025-05-01', $1
+          'missing-body', 'title ar', 'title fr', 'title en', '<p>body ar</p>', '2025-05-01', $1
         ) RETURNING id;
       `, [editorId]);
       const missingFrenchName = await db.query<{ id: string }>(`
         INSERT INTO article (
-          slug, title_ar, title_fr, body_ar, body_fr, published_date,
-          published_in_name_ar, author_editor_id
+          slug, title_ar, title_fr, title_en, body_ar, body_fr, body_en, published_date,
+          published_in_name_ar, published_in_name_en, author_editor_id
         ) VALUES (
-          'missing-source-fr', 'title ar', 'title fr', '<p>body ar</p>', '<p>body fr</p>', '2025-05-01',
-          'source ar', $1
+          'missing-source-fr', 'title ar', 'title fr', 'title en', '<p>body ar</p>', '<p>body fr</p>', '<p>body en</p>', '2025-05-01',
+          'source ar', 'source en', $1
         ) RETURNING id;
       `, [editorId]);
 
       await asAuthenticated(db, authUserId);
       await expect(
-        db.query(`SELECT publish_content_item('article', $1);`, [missingBody.rows[0].id]),
+        publishContentItem(db, "article", missingBody.rows[0].id),
       ).rejects.toThrow(/body/i);
       await expect(
-        db.query(`SELECT publish_content_item('article', $1);`, [missingFrenchName.rows[0].id]),
+        publishContentItem(db, "article", missingFrenchName.rows[0].id),
       ).rejects.toThrow(/French.*publication name/i);
     });
 
@@ -1110,17 +1195,17 @@ describe("Content Item schema (ticket 02)", () => {
     it("allows anon to read only published Articles", async () => {
       await db.query(`
         INSERT INTO article (
-          slug, title_ar, title_fr, body_ar, body_fr, published_date, author_editor_id
+          slug, title_ar, title_fr, title_en, body_ar, body_fr, body_en, published_date, author_editor_id
         ) VALUES
-          ('article-draft', 'title ar', 'title fr', '<p>body ar</p>', '<p>body fr</p>', '2025-01-01', $1),
-          ('article-public', 'title ar', 'title fr', '<p>body ar</p>', '<p>body fr</p>', '2025-02-01', $1);
+          ('article-draft', 'title ar', 'title fr', 'title en', '<p>body ar</p>', '<p>body fr</p>', '<p>body en</p>', '2025-01-01', $1),
+          ('article-public', 'title ar', 'title fr', 'title en', '<p>body ar</p>', '<p>body fr</p>', '<p>body en</p>', '2025-02-01', $1);
       `, [editorId]);
       const publicArticle = await db.query<{ id: string }>(`
         SELECT id FROM article WHERE slug = 'article-public';
       `);
 
       await asAuthenticated(db, authUserId);
-      await db.query(`SELECT publish_content_item('article', $1);`, [publicArticle.rows[0].id]);
+      await publishContentItem(db, "article", publicArticle.rows[0].id);
       await asAnon(db);
 
       const visible = await db.query<{ slug: string }>(`
@@ -1176,11 +1261,14 @@ describe("Content Item schema (ticket 02)", () => {
         "storage_path",
         "caption_ar",
         "caption_fr",
+        "caption_en",
         "taken_date",
         "photographer_credit_ar",
         "photographer_credit_fr",
+        "photographer_credit_en",
         "category_ar",
         "category_fr",
+        "category_en",
         "author_editor_id",
       ]) {
         expect(names.has(required), `missing ${required}`).toBe(true);
@@ -1202,17 +1290,17 @@ describe("Content Item schema (ticket 02)", () => {
     it("publishes a complete Gallery Photo only through the fixed RPC branch", async () => {
       const inserted = await db.query<{ id: string }>(`
         INSERT INTO gallery_photo (
-          slug, storage_path, caption_ar, caption_fr, taken_date,
-          photographer_credit_ar, photographer_credit_fr,
-          category_ar, category_fr, author_editor_id
+          slug, storage_path, caption_ar, caption_fr, caption_en, taken_date,
+          photographer_credit_ar, photographer_credit_fr, photographer_credit_en,
+          category_ar, category_fr, category_en, author_editor_id
         ) VALUES (
-          'national-forum', $2, 'caption ar', 'caption fr', '2025-05-01',
-          'credit ar', 'credit fr', 'category ar', 'category fr', $1
+          'national-forum', $2, 'caption ar', 'caption fr', 'caption en', '2025-05-01',
+          'credit ar', 'credit fr', 'credit en', 'category ar', 'category fr', 'category en', $1
         ) RETURNING id;
       `, [editorId, `${editorId}/national-forum.webp`]);
 
       await asAuthenticated(db, authUserId);
-      await db.query(`SELECT publish_content_item('gallery_photo', $1);`, [inserted.rows[0].id]);
+      await publishContentItem(db, "gallery_photo", inserted.rows[0].id);
 
       const published = await db.query<{ status: string; published_at: string | null }>(`
         SELECT status, published_at FROM gallery_photo WHERE id = $1;
@@ -1221,49 +1309,49 @@ describe("Content Item schema (ticket 02)", () => {
       expect(published.rows[0].published_at).not.toBeNull();
     });
 
-    it("rejects a missing image, taken date, or one-sided optional metadata at publication", async () => {
+    it("rejects a missing image, taken date, or incomplete optional metadata at publication", async () => {
       const missingImage = await db.query<{ id: string }>(`
         INSERT INTO gallery_photo (
-          slug, caption_ar, caption_fr, taken_date, author_editor_id
-        ) VALUES ('missing-image', 'caption ar', 'caption fr', '2025-05-01', $1)
+          slug, caption_ar, caption_fr, caption_en, taken_date, author_editor_id
+        ) VALUES ('missing-image', 'caption ar', 'caption fr', 'caption en', '2025-05-01', $1)
         RETURNING id;
       `, [editorId]);
       const missingDate = await db.query<{ id: string }>(`
         INSERT INTO gallery_photo (
-          slug, storage_path, caption_ar, caption_fr, author_editor_id
-        ) VALUES ('missing-date', $2, 'caption ar', 'caption fr', $1)
+          slug, storage_path, caption_ar, caption_fr, caption_en, author_editor_id
+        ) VALUES ('missing-date', $2, 'caption ar', 'caption fr', 'caption en', $1)
         RETURNING id;
       `, [editorId, `${editorId}/missing-date.png`]);
       const oneSidedCredit = await db.query<{ id: string }>(`
         INSERT INTO gallery_photo (
-          slug, storage_path, caption_ar, caption_fr, taken_date,
+          slug, storage_path, caption_ar, caption_fr, caption_en, taken_date,
           photographer_credit_ar, author_editor_id
-        ) VALUES ('one-sided-credit', $2, 'caption ar', 'caption fr', '2025-05-01', 'credit ar', $1)
+        ) VALUES ('one-sided-credit', $2, 'caption ar', 'caption fr', 'caption en', '2025-05-01', 'credit ar', $1)
         RETURNING id;
       `, [editorId, `${editorId}/one-sided-credit.jpg`]);
 
       await asAuthenticated(db, authUserId);
       await expect(
-        db.query(`SELECT publish_content_item('gallery_photo', $1);`, [missingImage.rows[0].id]),
+        publishContentItem(db, "gallery_photo", missingImage.rows[0].id),
       ).rejects.toThrow(/gallery image/i);
       await expect(
-        db.query(`SELECT publish_content_item('gallery_photo', $1);`, [missingDate.rows[0].id]),
+        publishContentItem(db, "gallery_photo", missingDate.rows[0].id),
       ).rejects.toThrow(/taken date/i);
       await expect(
-        db.query(`SELECT publish_content_item('gallery_photo', $1);`, [oneSidedCredit.rows[0].id]),
-      ).rejects.toThrow(/French photographer credit/i);
+        publishContentItem(db, "gallery_photo", oneSidedCredit.rows[0].id),
+      ).rejects.toThrow(/all Locales.*photographer credit/i);
     });
 
     it("allows an editor to return a published Gallery Photo to draft after its image is moved privately", async () => {
       const inserted = await db.query<{ id: string }>(`
         INSERT INTO gallery_photo (
-          slug, storage_path, caption_ar, caption_fr, taken_date, author_editor_id
-        ) VALUES ('unpublishable-photo', $2, 'caption ar', 'caption fr', '2025-05-01', $1)
+          slug, storage_path, caption_ar, caption_fr, caption_en, taken_date, author_editor_id
+        ) VALUES ('unpublishable-photo', $2, 'caption ar', 'caption fr', 'caption en', '2025-05-01', $1)
         RETURNING id;
       `, [editorId, `${editorId}/unpublishable-photo.webp`]);
 
       await asAuthenticated(db, authUserId);
-      await db.query(`SELECT publish_content_item('gallery_photo', $1);`, [inserted.rows[0].id]);
+      await publishContentItem(db, "gallery_photo", inserted.rows[0].id);
       await asPostgres(db);
       await db.query(`
         UPDATE gallery_photo
@@ -1280,17 +1368,17 @@ describe("Content Item schema (ticket 02)", () => {
     it("allows anon to read only published Gallery Photos", async () => {
       await db.query(`
         INSERT INTO gallery_photo (
-          slug, storage_path, caption_ar, caption_fr, taken_date, author_editor_id
+          slug, storage_path, caption_ar, caption_fr, caption_en, taken_date, author_editor_id
         ) VALUES
-          ('photo-draft', $2, 'caption ar', 'caption fr', '2025-05-01', $1),
-          ('photo-public', $3, 'caption ar', 'caption fr', '2025-05-02', $1);
+          ('photo-draft', $2, 'caption ar', 'caption fr', 'caption en', '2025-05-01', $1),
+          ('photo-public', $3, 'caption ar', 'caption fr', 'caption en', '2025-05-02', $1);
       `, [editorId, `${editorId}/photo-draft.jpg`, `${editorId}/photo-public.jpg`]);
       const publicPhoto = await db.query<{ id: string }>(`
         SELECT id FROM gallery_photo WHERE slug = 'photo-public';
       `);
 
       await asAuthenticated(db, authUserId);
-      await db.query(`SELECT publish_content_item('gallery_photo', $1);`, [publicPhoto.rows[0].id]);
+      await publishContentItem(db, "gallery_photo", publicPhoto.rows[0].id);
       await asAnon(db);
 
       const visible = await db.query<{ slug: string }>(`
@@ -1356,7 +1444,7 @@ describe("Content Item schema (ticket 02)", () => {
 
       await db.query(`
         UPDATE tagline
-        SET status = 'draft', published_at = null, tagline_ar = '', tagline_fr = ''
+        SET status = 'draft', published_at = null, tagline_ar = '', tagline_fr = '', tagline_en = ''
         WHERE singleton_key = true;
       `);
       return owner;
@@ -1369,9 +1457,10 @@ describe("Content Item schema (ticket 02)", () => {
         status: string;
         tagline_ar: string;
         tagline_fr: string;
+        tagline_en: string;
         author_editor_id: string | null;
       }>(`
-        SELECT singleton_key, status, tagline_ar, tagline_fr, author_editor_id
+        SELECT singleton_key, status, tagline_ar, tagline_fr, tagline_en, author_editor_id
         FROM tagline;
       `);
 
@@ -1380,6 +1469,7 @@ describe("Content Item schema (ticket 02)", () => {
         status: "draft",
         tagline_ar: "",
         tagline_fr: "",
+        tagline_en: "",
         author_editor_id: null,
       }]);
     });
@@ -1393,6 +1483,7 @@ describe("Content Item schema (ticket 02)", () => {
       const names = new Set(columns.rows.map((row) => row.column_name));
       expect(names.has("tagline_ar")).toBe(true);
       expect(names.has("tagline_fr")).toBe(true);
+      expect(names.has("tagline_en")).toBe(true);
       expect(names.has("singleton_key")).toBe(true);
       expect(names.has("author_editor_id")).toBe(true);
 
@@ -1408,11 +1499,11 @@ describe("Content Item schema (ticket 02)", () => {
       }
     });
 
-    it("publishes both Locales only through the fixed RPC branch after the Editor claims it", async () => {
+    it("publishes all three Locales only through the fixed RPC branch after the Editor claims it", async () => {
       const owner = await claimAndResetTagline();
       await db.query(`
         UPDATE tagline
-        SET tagline_ar = 'tagline ar', tagline_fr = 'tagline fr'
+        SET tagline_ar = 'tagline ar', tagline_fr = 'tagline fr', tagline_en = 'tagline en'
         WHERE singleton_key = true;
       `);
 
@@ -1448,7 +1539,7 @@ describe("Content Item schema (ticket 02)", () => {
       const owner = await claimAndResetTagline();
       await db.query(`
         UPDATE tagline
-        SET tagline_ar = 'tagline ar', tagline_fr = 'tagline fr'
+        SET tagline_ar = 'tagline ar', tagline_fr = 'tagline fr', tagline_en = 'tagline en'
         WHERE singleton_key = true;
       `);
       await asAuthenticated(db, owner.auth_user_id);

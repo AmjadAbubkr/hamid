@@ -39,18 +39,15 @@ describe("/api/portal/tagline", () => {
     expect(mocks.getSupabaseAdminClient).not.toHaveBeenCalled();
   });
 
-  it("claims the ownerless seed exactly once for the verified Editor", async () => {
-    const seed = { id: "tagline-id", status: "draft", tagline_ar: "", tagline_fr: "", author_editor_id: null };
-    const claimed = { ...seed, author_editor_id: "editor-id" };
-    mocks.from
-      .mockReturnValueOnce(selectSingleton(seed))
-      .mockReturnValueOnce(claimSingleton(claimed));
+  it("reads the ownerless seed without claiming it on GET", async () => {
+    const seed = { id: "tagline-id", status: "draft", tagline_ar: "", tagline_fr: "", tagline_en: "", author_editor_id: null };
+    mocks.from.mockReturnValueOnce(selectSingleton(seed));
 
     const response = await GET(request());
 
     expect(response!.status).toBe(200);
-    expect(await response!.json()).toEqual(expect.objectContaining({ tagline: claimed }));
-    expect(mocks.from).toHaveBeenCalledTimes(2);
+    expect(await response!.json()).toEqual(expect.objectContaining({ tagline: seed }));
+    expect(mocks.from).toHaveBeenCalledTimes(1);
   });
 
   it("saves a Draft first and then publishes through the request-bound session RPC", async () => {
@@ -64,6 +61,7 @@ describe("/api/portal/tagline", () => {
     const response = await POST(request({
       tagline_ar: "سطر",
       tagline_fr: "Une phrase",
+      tagline_en: "A sentence",
       action: "publish",
     }));
 
@@ -84,18 +82,6 @@ function request(body?: Record<string, unknown>) {
 function selectSingleton(data: Record<string, unknown>) {
   return {
     select: () => ({ eq: () => ({ maybeSingle: vi.fn().mockResolvedValue({ data, error: null }) }) }),
-  };
-}
-
-function claimSingleton(data: Record<string, unknown>) {
-  return {
-    update: () => ({
-      eq: () => ({
-        is: () => ({
-          select: () => ({ maybeSingle: vi.fn().mockResolvedValue({ data, error: null }) }),
-        }),
-      }),
-    }),
   };
 }
 

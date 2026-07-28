@@ -12,6 +12,7 @@ type Tagline = {
   status: "draft" | "published";
   tagline_ar: string;
   tagline_fr: string;
+  tagline_en: string;
   author_editor_id: string | null;
 };
 
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
   if ("errorResponse" in context) return context.errorResponse;
 
   try {
-    const tagline = await claimTagline(context.admin, context.editorId);
+    const tagline = await readTagline(context.admin, context.editorId);
     return jsonWithSessionCookies(context.response, { tagline }, 200);
   } catch (error) {
     return jsonWithSessionCookies(context.response, { error: messageFor(error, "The Tagline could not be loaded.") }, error instanceof TaglineOwnershipError ? 403 : 500);
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
       .update({ ...fields, status: "draft", published_at: null })
       .eq("id", tagline.id)
       .eq("author_editor_id", context.editorId)
-      .select("id, status, tagline_ar, tagline_fr, author_editor_id")
+      .select("id, status, tagline_ar, tagline_fr, tagline_en, author_editor_id")
       .maybeSingle();
     if (error) throw error;
     if (!data) throw new Error("The Tagline is not available to this Editor.");
@@ -101,44 +102,45 @@ async function editorContext(request: NextRequest) {
 }
 
 async function claimTagline(admin: ReturnType<typeof getSupabaseAdminClient>, editorId: string): Promise<Tagline> {
-  const { data, error } = await admin
-    .from("tagline")
-    .select("id, status, tagline_ar, tagline_fr, author_editor_id")
-    .eq("singleton_key", true)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) throw new Error("The singleton Tagline seed is missing.");
-
-  const current = data as Tagline;
+  const current = await readTagline(admin, editorId);
   if (current.author_editor_id === editorId) return current;
-  if (current.author_editor_id) throw new TaglineOwnershipError("The Tagline belongs to a different Editor.");
 
   const { data: claimed, error: claimError } = await admin
     .from("tagline")
     .update({ author_editor_id: editorId })
     .eq("id", current.id)
     .is("author_editor_id", null)
-    .select("id, status, tagline_ar, tagline_fr, author_editor_id")
+    .select("id, status, tagline_ar, tagline_fr, tagline_en, author_editor_id")
     .maybeSingle();
   if (claimError) throw claimError;
   if (claimed) return claimed as Tagline;
 
-  // A second request can race the initial claim. Re-read once: the winner is
-  // usable only if it is the same Editor, never silently transferred.
-  const { data: reread, error: rereadError } = await admin
+  const reread = await readTagline(admin, editorId);
+  if (reread.author_editor_id === editorId) return reread;
+  throw new TaglineOwnershipError("The Tagline belongs to a different Editor.");
+}
+
+async function readTagline(admin: ReturnType<typeof getSupabaseAdminClient>, editorId: string): Promise<Tagline> {
+  const { data, error } = await admin
     .from("tagline")
-    .select("id, status, tagline_ar, tagline_fr, author_editor_id")
+    .select("id, status, tagline_ar, tagline_fr, tagline_en, author_editor_id")
     .eq("singleton_key", true)
     .maybeSingle();
-  if (rereadError) throw rereadError;
-  if ((reread as Tagline | null)?.author_editor_id === editorId) return reread as Tagline;
-  throw new TaglineOwnershipError("The Tagline belongs to a different Editor.");
+  if (error) throw error;
+  if (!data) throw new Error("The singleton Tagline seed is missing.");
+
+  const current = data as Tagline;
+  if (current.author_editor_id && current.author_editor_id !== editorId) {
+    throw new TaglineOwnershipError("The Tagline belongs to a different Editor.");
+  }
+  return current;
 }
 
 function taglineFieldsFrom(payload: Record<string, unknown>) {
   return {
     tagline_ar: stringOrEmpty(payload.tagline_ar),
     tagline_fr: stringOrEmpty(payload.tagline_fr),
+    tagline_en: stringOrEmpty(payload.tagline_en),
   };
 }
 

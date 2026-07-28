@@ -25,6 +25,9 @@ import {
 
 type Params = { params: Promise<{ locale: string }> };
 
+// Portal changes must be visible without relying on a deployment webhook.
+export const revalidate = 0;
+
 function displayDate(date: string, locale: LocaleCode) {
   return new Intl.DateTimeFormat(intlLocaleFor(locale), {
     month: "short",

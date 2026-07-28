@@ -24,7 +24,7 @@ describe("EducationForm", () => {
     vi.resetAllMocks();
   });
 
-  it("saves an incomplete bilingual draft for the current Editor", async () => {
+  it("saves an incomplete three-locale draft for the current Editor", async () => {
     const single = vi.fn().mockResolvedValue({
       data: { id: "education-id", slug: "draft-education", status: "draft" },
       error: null,
@@ -44,8 +44,10 @@ describe("EducationForm", () => {
       slug: "draft-education",
       degree_ar: "",
       degree_fr: "",
+      degree_en: "",
       institution_ar: "",
       institution_fr: "",
+      institution_en: "",
       status: "draft",
     }));
     expect(mocks.replace).toHaveBeenCalledWith("/portal/education/draft-education");
@@ -59,6 +61,8 @@ describe("EducationForm", () => {
 
     fireEvent.change(screen.getByLabelText("Arabic degree"), { target: { value: "ماجستير" } });
     fireEvent.change(screen.getByLabelText("French degree"), { target: { value: "Master" } });
+    fireEvent.change(screen.getByLabelText("English degree"), { target: { value: "Masters" } });
+    fireEvent.change(screen.getByLabelText("English institution"), { target: { value: "University" } });
     fireEvent.change(screen.getByLabelText("Arabic institution"), { target: { value: "جامعة" } });
     fireEvent.change(screen.getByLabelText("French institution"), { target: { value: "Université" } });
     fireEvent.change(screen.getByLabelText("Start date"), { target: { value: "2018-01-01" } });
@@ -78,8 +82,10 @@ describe("EducationForm", () => {
       status: "draft",
       degree_ar: "ماجستير",
       degree_fr: "Master",
+      degree_en: "Masters",
       institution_ar: "جامعة",
       institution_fr: "Université",
+      institution_en: "University",
       start_date: "2018-01-01",
       end_date: "2019-01-01",
       location: "Yaoundé",

@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import type { PositionHeld } from "./position-form";
+import { usePortalLocale } from "./portal-locale-provider";
 
 type PositionListItem = Pick<PositionHeld, "id" | "slug" | "status" | "title_ar" | "title_fr" | "institution" | "start_date" | "end_date">;
 
 export function PositionList() {
+  const { t } = usePortalLocale();
   const [items, setItems] = useState<PositionListItem[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
 
@@ -43,15 +45,15 @@ export function PositionList() {
   }, []);
 
   if (state === "loading") {
-    return <p className="text-zinc-700">Loading Positions Held…</p>;
+    return <p className="text-zinc-700">{t("Loading Positions Held…")}</p>;
   }
 
   if (state === "error") {
-    return <p role="alert" className="rounded bg-zinc-100 p-3 text-zinc-800">Positions Held could not be loaded.</p>;
+    return <p role="alert" className="rounded bg-zinc-100 p-3 text-zinc-800">{t("Positions Held could not be loaded.")}</p>;
   }
 
   if (items.length === 0) {
-    return <p className="rounded border border-dashed border-zinc-300 p-4 text-zinc-700">No Positions Held yet.</p>;
+    return <p className="rounded border border-dashed border-zinc-300 p-4 text-zinc-700">{t("No Positions Held yet.")}</p>;
   }
 
   return (
@@ -66,10 +68,10 @@ export function PositionList() {
           </div>
           <div className="flex flex-wrap gap-3 text-sm font-semibold">
             <Link href={`/portal/positions/${item.slug}`} className="text-zinc-950 underline underline-offset-4">
-              Edit
+              {t("Edit")}
             </Link>
             <Link href={`/portal/positions/${item.slug}/preview`} className="text-zinc-950 underline underline-offset-4">
-              Preview
+              {t("Preview")}
             </Link>
           </div>
         </li>

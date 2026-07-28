@@ -48,15 +48,17 @@ describe("POST /api/portal/articles", () => {
     expect(mocks.getSupabaseAdminClient).not.toHaveBeenCalled();
   });
 
-  it("sanitizes both bodies, saves first, then publishes through the existing RPC", async () => {
+  it("sanitizes all three bodies, saves first, then publishes through the existing RPC", async () => {
     mocks.requestRpc.mockResolvedValue({ error: null });
 
     const response = await POST(articleRequest({
       slug: "essay",
       title_ar: "عنوان",
       title_fr: "Titre",
+      title_en: "Title",
       body_ar: '<p>نص<script>alert(1)</script></p>',
       body_fr: '<p>Texte<iframe src="https://evil.example"></iframe></p>',
+      body_en: '<p>Text<script>alert(1)</script></p>',
       published_date: "2025-01-01",
       action: "publish",
     }));
@@ -66,6 +68,7 @@ describe("POST /api/portal/articles", () => {
       author_editor_id: "editor-id",
       body_ar: "<p>نص</p>",
       body_fr: "<p>Texte</p>",
+      body_en: "<p>Text</p>",
     }));
     expect(mocks.requestRpc).toHaveBeenCalledWith("publish_content_item", {
       item_type: "article",

@@ -131,6 +131,7 @@ function galleryRequest({ action, image, id }: { action: string; image?: File; i
   formData.set("slug", "summit");
   formData.set("caption_ar", "تعليق");
   formData.set("caption_fr", "Légende");
+  formData.set("caption_en", "Caption");
   formData.set("taken_date", "2026-07-22");
   if (image) formData.set("image", image, image.name);
   return new NextRequest("https://profile.example/api/portal/gallery", { method: "POST", body: formData });

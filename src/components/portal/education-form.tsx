@@ -3,6 +3,8 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { normalizeSlugInput } from "@/lib/content/slug";
+import { PublishRequirements } from "./publish-requirements";
 
 export type EducationEntry = {
   id: string;
@@ -10,10 +12,13 @@ export type EducationEntry = {
   status: "draft" | "published";
   degree_ar?: string | null;
   degree_fr?: string | null;
+  degree_en?: string | null;
   institution_ar?: string | null;
   institution_fr?: string | null;
+  institution_en?: string | null;
   honours_ar?: string | null;
   honours_fr?: string | null;
+  honours_en?: string | null;
   start_date?: string | null;
   end_date?: string | null;
   location?: string | null;
@@ -24,10 +29,13 @@ type EducationFields = {
   slug: string;
   degree_ar: string;
   degree_fr: string;
+  degree_en: string;
   institution_ar: string;
   institution_fr: string;
+  institution_en: string;
   honours_ar: string;
   honours_fr: string;
+  honours_en: string;
   start_date: string;
   end_date: string;
   location: string;
@@ -37,10 +45,13 @@ const EMPTY_FIELDS: EducationFields = {
   slug: "",
   degree_ar: "",
   degree_fr: "",
+  degree_en: "",
   institution_ar: "",
   institution_fr: "",
+  institution_en: "",
   honours_ar: "",
   honours_fr: "",
+  honours_en: "",
   start_date: "",
   end_date: "",
   location: "",
@@ -53,10 +64,13 @@ function fieldsFrom(education?: EducationEntry): EducationFields {
     slug: education.slug,
     degree_ar: education.degree_ar ?? "",
     degree_fr: education.degree_fr ?? "",
+    degree_en: education.degree_en ?? "",
     institution_ar: education.institution_ar ?? "",
     institution_fr: education.institution_fr ?? "",
+    institution_en: education.institution_en ?? "",
     honours_ar: education.honours_ar ?? "",
     honours_fr: education.honours_fr ?? "",
+    honours_en: education.honours_en ?? "",
     start_date: education.start_date ?? "",
     end_date: education.end_date ?? "",
     location: education.location ?? "",
@@ -67,8 +81,8 @@ function isFilled(value: string) {
   return value.trim().length > 0;
 }
 
-function isPaired(left: string, right: string) {
-  return isFilled(left) === isFilled(right);
+function isCompleteAcrossLocales(arabic: string, french: string, english: string) {
+  return isFilled(arabic) === isFilled(french) && isFilled(french) === isFilled(english);
 }
 
 function errorMessage(error: unknown, fallback: string) {
@@ -86,12 +100,21 @@ export function EducationForm({ education }: { education?: EducationEntry }) {
   const canPublish = Boolean(education?.id)
     && isFilled(fields.degree_ar)
     && isFilled(fields.degree_fr)
+    && isFilled(fields.degree_en)
     && isFilled(fields.institution_ar)
     && isFilled(fields.institution_fr)
+    && isFilled(fields.institution_en)
     && isFilled(fields.start_date)
     && isFilled(fields.end_date)
     && isFilled(fields.location)
-    && isPaired(fields.honours_ar, fields.honours_fr);
+    && isCompleteAcrossLocales(fields.honours_ar, fields.honours_fr, fields.honours_en);
+  const publishRequirements = [
+    !education ? "Save this draft before publishing." : "",
+    !isFilled(fields.degree_ar) ? "Arabic degree" : "", !isFilled(fields.degree_fr) ? "French degree" : "", !isFilled(fields.degree_en) ? "English degree" : "",
+    !isFilled(fields.institution_ar) ? "Arabic institution" : "", !isFilled(fields.institution_fr) ? "French institution" : "", !isFilled(fields.institution_en) ? "English institution" : "",
+    !isFilled(fields.start_date) ? "Start date" : "", !isFilled(fields.end_date) ? "End date" : "", !isFilled(fields.location) ? "Location" : "",
+    !isCompleteAcrossLocales(fields.honours_ar, fields.honours_fr, fields.honours_en) ? "Honours in Arabic, French, and English — or leave all three blank" : "",
+  ].filter(Boolean);
 
   function changeField(name: keyof EducationFields, value: string) {
     setFields((current) => ({ ...current, [name]: value }));
@@ -112,10 +135,13 @@ export function EducationForm({ education }: { education?: EducationEntry }) {
         slug: fields.slug.trim(),
         degree_ar: fields.degree_ar,
         degree_fr: fields.degree_fr,
+        degree_en: fields.degree_en,
         institution_ar: fields.institution_ar,
         institution_fr: fields.institution_fr,
+        institution_en: fields.institution_en,
         honours_ar: emptyToNull(fields.honours_ar),
         honours_fr: emptyToNull(fields.honours_fr),
+        honours_en: emptyToNull(fields.honours_en),
         start_date: emptyToNull(fields.start_date),
         end_date: emptyToNull(fields.end_date),
         location: emptyToNull(fields.location),
@@ -181,7 +207,7 @@ export function EducationForm({ education }: { education?: EducationEntry }) {
             id="education-slug"
             name="slug"
             value={fields.slug}
-            onChange={(event) => changeField("slug", event.target.value)}
+            onChange={(event) => changeField("slug", normalizeSlugInput(event.target.value))}
             className="rounded border border-zinc-400 bg-white px-3 py-2 text-zinc-950"
             autoCapitalize="none"
             spellCheck={false}
@@ -191,7 +217,7 @@ export function EducationForm({ education }: { education?: EducationEntry }) {
         <p className="text-sm text-zinc-600">Status: {status}</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
         <LocalePane
           locale="Arabic"
           direction="rtl"
@@ -211,6 +237,16 @@ export function EducationForm({ education }: { education?: EducationEntry }) {
           onDegreeChange={(value) => changeField("degree_fr", value)}
           onInstitutionChange={(value) => changeField("institution_fr", value)}
           onHonoursChange={(value) => changeField("honours_fr", value)}
+        />
+        <LocalePane
+          locale="English"
+          direction="ltr"
+          degree={fields.degree_en}
+          institution={fields.institution_en}
+          honours={fields.honours_en}
+          onDegreeChange={(value) => changeField("degree_en", value)}
+          onInstitutionChange={(value) => changeField("institution_en", value)}
+          onHonoursChange={(value) => changeField("honours_en", value)}
         />
       </div>
 
@@ -250,6 +286,7 @@ export function EducationForm({ education }: { education?: EducationEntry }) {
       </fieldset>
 
       {message ? <p role="alert" className="rounded bg-zinc-100 p-3 text-sm text-zinc-800">{message}</p> : null}
+      <PublishRequirements requirements={publishRequirements} />
 
       <div className="flex flex-wrap gap-3">
         <button
@@ -283,7 +320,7 @@ function LocalePane({
   onInstitutionChange,
   onHonoursChange,
 }: {
-  locale: "Arabic" | "French";
+  locale: "Arabic" | "French" | "English";
   direction: "rtl" | "ltr";
   degree: string;
   institution: string;

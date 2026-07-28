@@ -44,9 +44,11 @@ describe("ParticipationForm", () => {
       slug: "draft-participation",
       title_ar: "",
       title_fr: "",
+      title_en: "",
       role: null,
       role_other_ar: null,
       role_other_fr: null,
+      role_other_en: null,
       status: "draft",
     }));
     expect(mocks.replace).toHaveBeenCalledWith("/portal/participations/draft-participation");
@@ -61,7 +63,10 @@ describe("ParticipationForm", () => {
     fireEvent.change(screen.getByLabelText("French venue"), { target: { value: "N'Djamena" } });
     fireEvent.change(screen.getByLabelText("Arabic institution"), { target: { value: "مؤسسة" } });
     fireEvent.change(screen.getByLabelText("French institution"), { target: { value: "Institution" } });
+    fireEvent.change(screen.getByLabelText("English title"), { target: { value: "Conference" } });
     fireEvent.change(screen.getByLabelText("Sortable event date"), { target: { value: "2023-01-17" } });
+    fireEvent.change(screen.getByLabelText("English venue"), { target: { value: "N'Djamena" } });
+    fireEvent.change(screen.getByLabelText("English institution"), { target: { value: "Institution" } });
     fireEvent.change(screen.getByLabelText("Published date label"), { target: { value: "17-19 January 2023" } });
     expect(screen.getByRole("button", { name: "Publish" })).toBeDisabled();
     fireEvent.change(screen.getByLabelText("Role"), { target: { value: "Other" } });
@@ -71,6 +76,7 @@ describe("ParticipationForm", () => {
 
     fireEvent.change(screen.getByLabelText("Arabic other role"), { target: { value: "دور خاص" } });
     fireEvent.change(screen.getByLabelText("French other role"), { target: { value: "Rôle spécial" } });
+    fireEvent.change(screen.getByLabelText("English other role"), { target: { value: "Special role" } });
     expect(publish).toBeEnabled();
 
     fireEvent.change(screen.getByLabelText("Arabic summary"), { target: { value: "ملخص" } });
@@ -90,6 +96,9 @@ describe("ParticipationForm", () => {
       institution_ar: "مؤسسة",
       institution_fr: "Institution",
       role: "Speaker",
+      title_en: "Conference",
+      venue_en: "N'Djamena",
+      institution_en: "Institution",
       event_date: "2023-01-17",
       event_date_label: "17 January 2023",
     }} />);
