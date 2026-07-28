@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import type { Article } from "./article-form";
+import { usePortalLocale } from "./portal-locale-provider";
 
 type ArticleListItem = Pick<Article, "id" | "slug" | "status" | "title_ar" | "title_fr" | "published_date">;
 
 export function ArticleList() {
+  const { t } = usePortalLocale();
   const [items, setItems] = useState<ArticleListItem[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
 
@@ -42,9 +44,9 @@ export function ArticleList() {
     };
   }, []);
 
-  if (state === "loading") return <p className="text-zinc-700">Loading Articles...</p>;
-  if (state === "error") return <p role="alert" className="rounded bg-zinc-100 p-3 text-zinc-800">Articles could not be loaded.</p>;
-  if (items.length === 0) return <p className="rounded border border-dashed border-zinc-300 p-4 text-zinc-700">No Articles yet.</p>;
+  if (state === "loading") return <p className="text-zinc-700">{t("Loading Articles...")}</p>;
+  if (state === "error") return <p role="alert" className="rounded bg-zinc-100 p-3 text-zinc-800">{t("Articles could not be loaded.")}</p>;
+  if (items.length === 0) return <p className="rounded border border-dashed border-zinc-300 p-4 text-zinc-700">{t("No Articles yet.")}</p>;
 
   return (
     <ul className="flex flex-col gap-3" aria-label="Articles">
@@ -55,8 +57,8 @@ export function ArticleList() {
             <p className="text-sm text-zinc-600">{item.published_date || "Original publication date not set"} · {item.status}</p>
           </div>
           <div className="flex flex-wrap gap-3 text-sm font-semibold">
-            <Link href={`/portal/articles/${item.slug}`} className="text-zinc-950 underline underline-offset-4">Edit</Link>
-            <Link href={`/portal/articles/${item.slug}/preview`} className="text-zinc-950 underline underline-offset-4">Preview</Link>
+            <Link href={`/portal/articles/${item.slug}`} className="text-zinc-950 underline underline-offset-4">{t("Edit")}</Link>
+            <Link href={`/portal/articles/${item.slug}/preview`} className="text-zinc-950 underline underline-offset-4">{t("Preview")}</Link>
           </div>
         </li>
       ))}

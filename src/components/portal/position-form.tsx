@@ -3,6 +3,9 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { normalizeSlugInput } from "@/lib/content/slug";
+import { PublishRequirements } from "./publish-requirements";
+import { usePortalLocale } from "./portal-locale-provider";
 
 export type PositionHeld = {
   id: string;
@@ -10,8 +13,10 @@ export type PositionHeld = {
   status: "draft" | "published";
   title_ar?: string | null;
   title_fr?: string | null;
+  title_en?: string | null;
   body_ar?: string | null;
   body_fr?: string | null;
+  body_en?: string | null;
   institution?: string | null;
   start_date?: string | null;
   end_date?: string | null;
@@ -23,8 +28,10 @@ type PositionFields = {
   slug: string;
   title_ar: string;
   title_fr: string;
+  title_en: string;
   body_ar: string;
   body_fr: string;
+  body_en: string;
   institution: string;
   start_date: string;
   end_date: string;
@@ -35,8 +42,10 @@ const EMPTY_FIELDS: PositionFields = {
   slug: "",
   title_ar: "",
   title_fr: "",
+  title_en: "",
   body_ar: "",
   body_fr: "",
+  body_en: "",
   institution: "",
   start_date: "",
   end_date: "",
@@ -50,8 +59,10 @@ function fieldsFrom(position?: PositionHeld): PositionFields {
     slug: position.slug,
     title_ar: position.title_ar ?? "",
     title_fr: position.title_fr ?? "",
+    title_en: position.title_en ?? "",
     body_ar: position.body_ar ?? "",
     body_fr: position.body_fr ?? "",
+    body_en: position.body_en ?? "",
     institution: position.institution ?? "",
     start_date: position.start_date ?? "",
     end_date: position.end_date ?? "",
@@ -69,20 +80,33 @@ function messageFor(error: unknown, fallback: string) {
 
 export function PositionForm({ position }: { position?: PositionHeld }) {
   const router = useRouter();
+  const { t } = usePortalLocale();
   const [fields, setFields] = useState(() => fieldsFrom(position));
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [status, setStatus] = useState(position?.status ?? "draft");
 
-  const summariesArePaired = isFilled(fields.body_ar) === isFilled(fields.body_fr);
+  const summariesArePaired = isFilled(fields.body_ar) === isFilled(fields.body_fr)
+    && isFilled(fields.body_fr) === isFilled(fields.body_en);
   const canPublish = Boolean(position?.id)
     && isFilled(fields.title_ar)
     && isFilled(fields.title_fr)
+    && isFilled(fields.title_en)
     && isFilled(fields.institution)
     && isFilled(fields.start_date)
     && isFilled(fields.location)
     && summariesArePaired;
+  const publishRequirements = [
+    !position ? "Save this draft before publishing." : "",
+    !isFilled(fields.title_ar) ? "Arabic title" : "",
+    !isFilled(fields.title_fr) ? "French title" : "",
+    !isFilled(fields.title_en) ? "English title" : "",
+    !isFilled(fields.institution) ? "Institution" : "",
+    !isFilled(fields.start_date) ? "Start date" : "",
+    !isFilled(fields.location) ? "Location" : "",
+    !summariesArePaired ? "Summary in Arabic, French, and English — or leave all three blank" : "",
+  ].filter(Boolean);
 
   function changeField(name: keyof PositionFields, value: string) {
     setFields((current) => ({ ...current, [name]: value }));
@@ -104,8 +128,10 @@ export function PositionForm({ position }: { position?: PositionHeld }) {
         slug: fields.slug.trim(),
         title_ar: fields.title_ar,
         title_fr: fields.title_fr,
+        title_en: fields.title_en,
         body_ar: emptyToNull(fields.body_ar),
         body_fr: emptyToNull(fields.body_fr),
+        body_en: emptyToNull(fields.body_en),
         institution: emptyToNull(fields.institution),
         start_date: emptyToNull(fields.start_date),
         end_date: emptyToNull(fields.end_date),
@@ -167,24 +193,24 @@ export function PositionForm({ position }: { position?: PositionHeld }) {
     <form className="flex flex-col gap-6" onSubmit={saveDraft}>
       <div className="flex flex-col gap-2 rounded-lg border border-zinc-300 bg-white p-4">
         <label className="flex flex-col gap-1 text-sm font-medium text-zinc-800" htmlFor="position-slug">
-          URL slug
+          {t("URL slug")}
           <input
             id="position-slug"
             name="slug"
             value={fields.slug}
-            onChange={(event) => changeField("slug", event.target.value)}
+            onChange={(event) => changeField("slug", normalizeSlugInput(event.target.value))}
             className="rounded border border-zinc-400 bg-white px-3 py-2 text-zinc-950"
             autoCapitalize="none"
             spellCheck={false}
             required
           />
         </label>
-        <p className="text-sm text-zinc-600">Status: {status}</p>
+        <p className="text-sm text-zinc-600">{t("Status:")} {t(status)}</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
         <LocalePane
-          locale="Arabic"
+          locale={t("Arabic")}
           direction="rtl"
           title={fields.title_ar}
           body={fields.body_ar}
@@ -192,19 +218,27 @@ export function PositionForm({ position }: { position?: PositionHeld }) {
           onBodyChange={(value) => changeField("body_ar", value)}
         />
         <LocalePane
-          locale="French"
+          locale={t("French")}
           direction="ltr"
           title={fields.title_fr}
           body={fields.body_fr}
           onTitleChange={(value) => changeField("title_fr", value)}
           onBodyChange={(value) => changeField("body_fr", value)}
         />
+        <LocalePane
+          locale={t("English")}
+          direction="ltr"
+          title={fields.title_en}
+          body={fields.body_en}
+          onTitleChange={(value) => changeField("title_en", value)}
+          onBodyChange={(value) => changeField("body_en", value)}
+        />
       </div>
 
       <fieldset className="flex flex-col gap-4 rounded-lg border border-zinc-300 bg-white p-4">
-        <legend className="px-1 text-base font-semibold text-zinc-950">Position details</legend>
+        <legend className="px-1 text-base font-semibold text-zinc-950">{t("Position details")}</legend>
         <label className="flex flex-col gap-1 text-sm font-medium text-zinc-800" htmlFor="position-institution">
-          Institution
+          {t("Institution")}
           <input
             id="position-institution"
             value={fields.institution}
@@ -214,7 +248,7 @@ export function PositionForm({ position }: { position?: PositionHeld }) {
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm font-medium text-zinc-800" htmlFor="position-start-date">
-            Start date
+            {t("Start date")}
             <input
               id="position-start-date"
               type="date"
@@ -224,7 +258,7 @@ export function PositionForm({ position }: { position?: PositionHeld }) {
             />
           </label>
           <label className="flex flex-col gap-1 text-sm font-medium text-zinc-800" htmlFor="position-end-date">
-            End date (leave empty for present)
+            {t("End date (leave empty for present)")}
             <input
               id="position-end-date"
               type="date"
@@ -235,7 +269,7 @@ export function PositionForm({ position }: { position?: PositionHeld }) {
           </label>
         </div>
         <label className="flex flex-col gap-1 text-sm font-medium text-zinc-800" htmlFor="position-location">
-          Location
+          {t("Location")}
           <input
             id="position-location"
             value={fields.location}
@@ -247,13 +281,15 @@ export function PositionForm({ position }: { position?: PositionHeld }) {
 
       {message ? <p role="alert" className="rounded bg-zinc-100 p-3 text-sm text-zinc-800">{message}</p> : null}
 
+      <PublishRequirements requirements={publishRequirements} />
+
       <div className="flex flex-wrap gap-3">
         <button
           type="submit"
           disabled={saving || publishing}
           className="rounded bg-zinc-950 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {saving ? "Saving…" : "Save as draft"}
+          {saving ? t("Saving…") : t("Save as draft")}
         </button>
         <button
           type="button"
@@ -261,10 +297,10 @@ export function PositionForm({ position }: { position?: PositionHeld }) {
           onClick={publish}
           className="rounded border border-zinc-950 px-4 py-2 font-semibold text-zinc-950 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {publishing ? "Publishing…" : "Publish"}
+          {publishing ? t("Publishing…") : t("Publish")}
         </button>
       </div>
-      {!position ? <p className="text-sm text-zinc-600">Save the draft before publishing it.</p> : null}
+      {!position ? <p className="text-sm text-zinc-600">{t("Save the draft before publishing it.")}</p> : null}
     </form>
   );
 }
@@ -277,20 +313,21 @@ function LocalePane({
   onTitleChange,
   onBodyChange,
 }: {
-  locale: "Arabic" | "French";
+  locale: string;
   direction: "rtl" | "ltr";
   title: string;
   body: string;
   onTitleChange: (value: string) => void;
   onBodyChange: (value: string) => void;
 }) {
-  const id = locale.toLowerCase();
+  const { t } = usePortalLocale();
+  const id = direction === "rtl" ? "arabic" : locale === t("French") ? "french" : "english";
 
   return (
     <section dir={direction} className="flex flex-col gap-4 rounded-lg border border-zinc-300 bg-white p-4">
       <h2 className="text-lg font-semibold text-zinc-950">{locale}</h2>
       <label className="flex flex-col gap-1 text-sm font-medium text-zinc-800" htmlFor={`position-title-${id}`}>
-        {locale} title
+        {locale} {t("title")}
         <input
           id={`position-title-${id}`}
           value={title}
@@ -299,7 +336,7 @@ function LocalePane({
         />
       </label>
       <label className="flex flex-col gap-1 text-sm font-medium text-zinc-800" htmlFor={`position-summary-${id}`}>
-        {locale} summary
+        {locale} {t("summary")}
         <textarea
           id={`position-summary-${id}`}
           value={body}

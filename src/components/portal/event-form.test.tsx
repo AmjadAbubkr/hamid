@@ -45,6 +45,7 @@ describe("EventForm", () => {
       role: null,
       role_other_ar: null,
       role_other_fr: null,
+      role_other_en: null,
       status: "draft",
     }));
     expect(mocks.replace).toHaveBeenCalledWith("/portal/events/draft-event");
@@ -60,6 +61,9 @@ describe("EventForm", () => {
     fireEvent.change(screen.getByLabelText("French venue"), { target: { value: "French venue" } });
     fireEvent.change(screen.getByLabelText("Arabic institution"), { target: { value: "Arabic institution" } });
     fireEvent.change(screen.getByLabelText("French institution"), { target: { value: "French institution" } });
+    fireEvent.change(screen.getByLabelText("English title"), { target: { value: "English title" } });
+    fireEvent.change(screen.getByLabelText("English venue"), { target: { value: "English venue" } });
+    fireEvent.change(screen.getByLabelText("English institution"), { target: { value: "English institution" } });
     fireEvent.change(screen.getByLabelText("Event date"), { target: { value: "2026-08-01" } });
 
     expect(publish).toBeDisabled();
@@ -67,6 +71,7 @@ describe("EventForm", () => {
     expect(publish).toBeDisabled();
     fireEvent.change(screen.getByLabelText("Arabic other role"), { target: { value: "Custom role" } });
     fireEvent.change(screen.getByLabelText("French other role"), { target: { value: "Custom role" } });
+    fireEvent.change(screen.getByLabelText("English other role"), { target: { value: "Custom role" } });
     expect(publish).toBeEnabled();
 
     fireEvent.change(screen.getByLabelText("Arabic announcement"), { target: { value: "Only one language" } });
@@ -85,6 +90,9 @@ describe("EventForm", () => {
       venue_fr: "French venue",
       institution_ar: "Arabic institution",
       institution_fr: "French institution",
+      title_en: "English title",
+      venue_en: "English venue",
+      institution_en: "English institution",
       event_date: "2026-08-01",
       role: "Speaker",
     }} />);

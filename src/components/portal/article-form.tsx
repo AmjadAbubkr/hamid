@@ -4,6 +4,9 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { normalizeSlugInput } from "@/lib/content/slug";
+import { PublishRequirements } from "./publish-requirements";
+import { usePortalLocale } from "./portal-locale-provider";
 
 export type Article = {
   id: string;
@@ -11,11 +14,14 @@ export type Article = {
   status: "draft" | "published";
   title_ar?: string | null;
   title_fr?: string | null;
+  title_en?: string | null;
   body_ar?: string | null;
   body_fr?: string | null;
+  body_en?: string | null;
   published_in_url?: string | null;
   published_in_name_ar?: string | null;
   published_in_name_fr?: string | null;
+  published_in_name_en?: string | null;
   published_date?: string | null;
 };
 
@@ -23,11 +29,14 @@ type ArticleFields = {
   slug: string;
   title_ar: string;
   title_fr: string;
+  title_en: string;
   body_ar: string;
   body_fr: string;
+  body_en: string;
   published_in_url: string;
   published_in_name_ar: string;
   published_in_name_fr: string;
+  published_in_name_en: string;
   published_date: string;
 };
 
@@ -35,11 +44,14 @@ const EMPTY_FIELDS: ArticleFields = {
   slug: "",
   title_ar: "",
   title_fr: "",
+  title_en: "",
   body_ar: "",
   body_fr: "",
+  body_en: "",
   published_in_url: "",
   published_in_name_ar: "",
   published_in_name_fr: "",
+  published_in_name_en: "",
   published_date: "",
 };
 
@@ -50,11 +62,14 @@ function fieldsFrom(article?: Article): ArticleFields {
     slug: article.slug,
     title_ar: article.title_ar ?? "",
     title_fr: article.title_fr ?? "",
+    title_en: article.title_en ?? "",
     body_ar: article.body_ar ?? "",
     body_fr: article.body_fr ?? "",
+    body_en: article.body_en ?? "",
     published_in_url: article.published_in_url ?? "",
     published_in_name_ar: article.published_in_name_ar ?? "",
     published_in_name_fr: article.published_in_name_fr ?? "",
+    published_in_name_en: article.published_in_name_en ?? "",
     published_date: article.published_date ?? "",
   };
 }
@@ -63,8 +78,8 @@ function isFilled(value: string) {
   return value.trim().length > 0;
 }
 
-function isPaired(left: string, right: string) {
-  return isFilled(left) === isFilled(right);
+function isCompleteAcrossLocales(ar: string, fr: string, en: string) {
+  return isFilled(ar) === isFilled(fr) && isFilled(fr) === isFilled(en);
 }
 
 function messageFor(error: unknown, fallback: string) {
@@ -73,22 +88,33 @@ function messageFor(error: unknown, fallback: string) {
 
 export function ArticleForm({ article }: { article?: Article }) {
   const router = useRouter();
+  const { locale, t } = usePortalLocale();
   const [fields, setFields] = useState(() => fieldsFrom(article));
   const [status, setStatus] = useState(article?.status ?? "draft");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [shareMessage, setShareMessage] = useState("");
   const isPublished = status === "published";
   const hasInstitutionalTitle = /\bstatement\b|\bcommuniqu(?:e|[\u00e9\u00c9])(?=\s|$|[.,:;!?])/i.test(
-    `${fields.title_ar} ${fields.title_fr}`,
+    `${fields.title_ar} ${fields.title_fr} ${fields.title_en}`,
   );
   const canPublish = Boolean(article?.id)
     && isFilled(fields.title_ar)
     && isFilled(fields.title_fr)
+    && isFilled(fields.title_en)
     && isFilled(fields.body_ar)
     && isFilled(fields.body_fr)
+    && isFilled(fields.body_en)
     && isFilled(fields.published_date)
-    && isPaired(fields.published_in_name_ar, fields.published_in_name_fr);
+    && isCompleteAcrossLocales(fields.published_in_name_ar, fields.published_in_name_fr, fields.published_in_name_en);
+  const publishRequirements = [
+    !article ? "Save this draft before publishing." : "",
+    !isFilled(fields.title_ar) ? "Arabic title" : "", !isFilled(fields.title_fr) ? "French title" : "", !isFilled(fields.title_en) ? "English title" : "",
+    !isFilled(fields.body_ar) ? "Arabic body" : "", !isFilled(fields.body_fr) ? "French body" : "", !isFilled(fields.body_en) ? "English body" : "",
+    !isFilled(fields.published_date) ? "Original publication date" : "",
+    !isCompleteAcrossLocales(fields.published_in_name_ar, fields.published_in_name_fr, fields.published_in_name_en) ? "Publication name in Arabic, French, and English — or leave all three blank" : "",
+  ].filter(Boolean);
 
   function changeField(name: keyof ArticleFields, value: string) {
     setFields((current) => ({ ...current, [name]: value }));
@@ -141,6 +167,18 @@ export function ArticleForm({ article }: { article?: Article }) {
     }
   }
 
+  async function shareArticle() {
+    if (!isPublished || !fields.slug) return;
+
+    try {
+      const url = new URL(`/${locale}/articles/${fields.slug}`, window.location.origin).toString();
+      await navigator.clipboard.writeText(url);
+      setShareMessage(t("Article link copied. You can now paste it into social media."));
+    } catch {
+      setShareMessage(t("We could not copy the article link. Please copy it from the browser address bar."));
+    }
+  }
+
   return (
     <form className="flex flex-col gap-6" onSubmit={submit}>
       {isPublished ? (
@@ -150,18 +188,18 @@ export function ArticleForm({ article }: { article?: Article }) {
       ) : null}
       <div className="flex flex-col gap-2 rounded-lg border border-zinc-300 bg-white p-4">
         <label className="flex flex-col gap-1 text-sm font-medium text-zinc-800" htmlFor="article-slug">
-          URL slug
+          {t("URL slug")}
           <input
             id="article-slug"
             value={fields.slug}
-            onChange={(event) => changeField("slug", event.target.value)}
+            onChange={(event) => changeField("slug", normalizeSlugInput(event.target.value))}
             className="rounded border border-zinc-400 bg-white px-3 py-2 text-zinc-950"
             autoCapitalize="none"
             spellCheck={false}
             required
           />
         </label>
-        <p className="text-sm text-zinc-600">Status: {status}</p>
+        <p className="text-sm text-zinc-600">{t("Status:")} {t(status)}</p>
       </div>
 
       <p className="rounded border border-zinc-300 bg-white p-4 text-sm text-zinc-700">
@@ -173,7 +211,7 @@ export function ArticleForm({ article }: { article?: Article }) {
         </p>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
         <LocalePane
           locale="Arabic"
           direction="rtl"
@@ -194,6 +232,16 @@ export function ArticleForm({ article }: { article?: Article }) {
           onBodyChange={(value) => changeField("body_fr", value)}
           onPublicationNameChange={(value) => changeField("published_in_name_fr", value)}
         />
+        <LocalePane
+          locale="English"
+          direction="ltr"
+          title={fields.title_en}
+          body={fields.body_en}
+          publicationName={fields.published_in_name_en}
+          onTitleChange={(value) => changeField("title_en", value)}
+          onBodyChange={(value) => changeField("body_en", value)}
+          onPublicationNameChange={(value) => changeField("published_in_name_en", value)}
+        />
       </div>
 
       <fieldset className="flex flex-col gap-4 rounded-lg border border-zinc-300 bg-white p-4">
@@ -204,16 +252,26 @@ export function ArticleForm({ article }: { article?: Article }) {
       </fieldset>
 
       {message ? <p role="alert" className="rounded bg-zinc-100 p-3 text-sm text-zinc-800">{message}</p> : null}
+      <PublishRequirements requirements={publishRequirements} />
       <div className="flex flex-wrap gap-3">
         <button type="submit" disabled={saving || publishing} className="rounded bg-zinc-950 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">
-          {saving ? "Saving..." : isPublished ? "Save changes" : "Save as draft"}
+          {saving ? t("Saving...") : isPublished ? t("Save changes") : t("Save as draft")}
         </button>
         {!isPublished ? (
           <button type="button" disabled={!canPublish || saving || publishing} onClick={() => void save("publish")} className="rounded border border-zinc-950 px-4 py-2 font-semibold text-zinc-950 disabled:cursor-not-allowed disabled:opacity-60">
-            {publishing ? "Publishing..." : "Publish"}
+            {publishing ? t("Publishing...") : t("Publish")}
           </button>
         ) : null}
+        <button
+          type="button"
+          disabled={!isPublished || saving || publishing}
+          onClick={() => void shareArticle()}
+          className="rounded border border-zinc-950 px-4 py-2 font-semibold text-zinc-950 transition-transform active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {t("Copy article link")}
+        </button>
       </div>
+      {shareMessage ? <p role="status" className="text-sm text-zinc-700">{shareMessage}</p> : null}
       {!article ? <p className="text-sm text-zinc-600">Save the draft before publishing it.</p> : null}
     </form>
   );
@@ -229,7 +287,7 @@ function LocalePane({
   onBodyChange,
   onPublicationNameChange,
 }: {
-  locale: "Arabic" | "French";
+  locale: "Arabic" | "French" | "English";
   direction: "rtl" | "ltr";
   title: string;
   body: string;
@@ -255,7 +313,7 @@ function ArticleBodyEditor({
   value,
   onChange,
 }: {
-  locale: "Arabic" | "French";
+  locale: "Arabic" | "French" | "English";
   direction: "rtl" | "ltr";
   value: string;
   onChange: (value: string) => void;

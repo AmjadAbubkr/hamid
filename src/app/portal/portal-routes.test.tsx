@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { portalBackHref } from "@/components/portal/portal-back-button";
 import PortalLoginPage from "@/app/portal/(public)/login/page";
 import PortalPage from "@/app/portal/(normal)/page";
 import PortalRecoverPage from "@/app/portal/(public)/recover/page";
@@ -8,6 +9,7 @@ import PortalReEnrollPage from "@/app/portal/(recovery)/re-enroll/page";
 import PortalRecoveryCodePage from "@/app/portal/(normal)/recovery-code/page";
 
 vi.mock("next/navigation", () => ({
+  usePathname: () => "/portal/login",
   useRouter: () => ({ replace: vi.fn() }),
 }));
 
@@ -16,10 +18,18 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 
 describe("Portal routes", () => {
+  it("uses the Portal hierarchy instead of browser history for Back", () => {
+    expect(portalBackHref("/portal/positions/ambassador")).toBe("/portal/positions");
+    expect(portalBackHref("/portal/positions/ambassador/preview")).toBe("/portal/positions/ambassador");
+    expect(portalBackHref("/portal/positions/new")).toBe("/portal/positions");
+    expect(portalBackHref("/portal/positions")).toBe("/portal");
+  });
+
   it("renders the passkey-only Portal login route", () => {
     render(<PortalLoginPage />);
 
     expect(screen.getByRole("heading", { name: "Portal sign-in" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Go back" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign in with passkey" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
   });

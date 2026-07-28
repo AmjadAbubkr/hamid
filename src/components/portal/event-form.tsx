@@ -8,6 +8,8 @@ import {
   type ParticipationRole,
 } from "@/lib/content/participation-roles";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { normalizeSlugInput } from "@/lib/content/slug";
+import { PublishRequirements } from "./publish-requirements";
 
 export type UpcomingEvent = {
   id: string;
@@ -15,16 +17,21 @@ export type UpcomingEvent = {
   status: "draft" | "published";
   title_ar?: string | null;
   title_fr?: string | null;
+  title_en?: string | null;
   body_ar?: string | null;
   body_fr?: string | null;
+  body_en?: string | null;
   event_date?: string | null;
   venue_ar?: string | null;
   venue_fr?: string | null;
+  venue_en?: string | null;
   institution_ar?: string | null;
   institution_fr?: string | null;
+  institution_en?: string | null;
   role?: ParticipationRole | null;
   role_other_ar?: string | null;
   role_other_fr?: string | null;
+  role_other_en?: string | null;
   registration_url?: string | null;
 };
 
@@ -32,16 +39,21 @@ type EventFields = {
   slug: string;
   title_ar: string;
   title_fr: string;
+  title_en: string;
   body_ar: string;
   body_fr: string;
+  body_en: string;
   event_date: string;
   venue_ar: string;
   venue_fr: string;
+  venue_en: string;
   institution_ar: string;
   institution_fr: string;
+  institution_en: string;
   role: ParticipationRole | "";
   role_other_ar: string;
   role_other_fr: string;
+  role_other_en: string;
   registration_url: string;
 };
 
@@ -49,16 +61,21 @@ const EMPTY_FIELDS: EventFields = {
   slug: "",
   title_ar: "",
   title_fr: "",
+  title_en: "",
   body_ar: "",
   body_fr: "",
+  body_en: "",
   event_date: "",
   venue_ar: "",
   venue_fr: "",
+  venue_en: "",
   institution_ar: "",
   institution_fr: "",
+  institution_en: "",
   role: "",
   role_other_ar: "",
   role_other_fr: "",
+  role_other_en: "",
   registration_url: "",
 };
 
@@ -69,16 +86,21 @@ function fieldsFrom(event?: UpcomingEvent): EventFields {
     slug: event.slug,
     title_ar: event.title_ar ?? "",
     title_fr: event.title_fr ?? "",
+    title_en: event.title_en ?? "",
     body_ar: event.body_ar ?? "",
     body_fr: event.body_fr ?? "",
+    body_en: event.body_en ?? "",
     event_date: event.event_date ?? "",
     venue_ar: event.venue_ar ?? "",
     venue_fr: event.venue_fr ?? "",
+    venue_en: event.venue_en ?? "",
     institution_ar: event.institution_ar ?? "",
     institution_fr: event.institution_fr ?? "",
+    institution_en: event.institution_en ?? "",
     role: event.role ?? "",
     role_other_ar: event.role_other_ar ?? "",
     role_other_fr: event.role_other_fr ?? "",
+    role_other_en: event.role_other_en ?? "",
     registration_url: event.registration_url ?? "",
   };
 }
@@ -87,8 +109,8 @@ function isFilled(value: string) {
   return value.trim().length > 0;
 }
 
-function isPaired(left: string, right: string) {
-  return isFilled(left) === isFilled(right);
+function isCompleteAcrossLocales(arabic: string, french: string, english: string) {
+  return isFilled(arabic) === isFilled(french) && isFilled(french) === isFilled(english);
 }
 
 function emptyToNull(value: string): string | null {
@@ -108,19 +130,30 @@ export function EventForm({ event }: { event?: UpcomingEvent }) {
   const [publishing, setPublishing] = useState(false);
   const isPublished = status === "published";
   const roleOtherIsComplete = fields.role !== "Other" || (
-    isFilled(fields.role_other_ar) && isFilled(fields.role_other_fr)
+    isFilled(fields.role_other_ar) && isFilled(fields.role_other_fr) && isFilled(fields.role_other_en)
   );
   const canPublish = Boolean(event?.id)
     && isFilled(fields.title_ar)
     && isFilled(fields.title_fr)
-    && isPaired(fields.body_ar, fields.body_fr)
+    && isFilled(fields.title_en)
+    && isCompleteAcrossLocales(fields.body_ar, fields.body_fr, fields.body_en)
     && isFilled(fields.event_date)
     && isFilled(fields.venue_ar)
     && isFilled(fields.venue_fr)
+    && isFilled(fields.venue_en)
     && isFilled(fields.institution_ar)
     && isFilled(fields.institution_fr)
+    && isFilled(fields.institution_en)
     && isFilled(fields.role)
     && roleOtherIsComplete;
+  const publishRequirements = [
+    !event ? "Save this draft before publishing." : "",
+    !isFilled(fields.title_ar) ? "Arabic title" : "", !isFilled(fields.title_fr) ? "French title" : "", !isFilled(fields.title_en) ? "English title" : "",
+    !isCompleteAcrossLocales(fields.body_ar, fields.body_fr, fields.body_en) ? "Announcement in Arabic, French, and English — or leave all three blank" : "",
+    !isFilled(fields.event_date) ? "Event date" : "", !isFilled(fields.venue_ar) ? "Arabic venue" : "", !isFilled(fields.venue_fr) ? "French venue" : "", !isFilled(fields.venue_en) ? "English venue" : "",
+    !isFilled(fields.institution_ar) ? "Arabic institution" : "", !isFilled(fields.institution_fr) ? "French institution" : "", !isFilled(fields.institution_en) ? "English institution" : "",
+    !isFilled(fields.role) ? "Role" : "", !roleOtherIsComplete ? "Other role in Arabic, French, and English" : "",
+  ].filter(Boolean);
 
   function changeField(name: keyof EventFields, value: string) {
     setFields((current) => ({ ...current, [name]: value }));
@@ -141,16 +174,21 @@ export function EventForm({ event }: { event?: UpcomingEvent }) {
         slug: fields.slug.trim(),
         title_ar: fields.title_ar,
         title_fr: fields.title_fr,
+        title_en: fields.title_en,
         body_ar: emptyToNull(fields.body_ar),
         body_fr: emptyToNull(fields.body_fr),
+        body_en: emptyToNull(fields.body_en),
         event_date: emptyToNull(fields.event_date),
         venue_ar: fields.venue_ar,
         venue_fr: fields.venue_fr,
+        venue_en: fields.venue_en,
         institution_ar: fields.institution_ar,
         institution_fr: fields.institution_fr,
+        institution_en: fields.institution_en,
         role: fields.role || null,
         role_other_ar: fields.role === "Other" ? emptyToNull(fields.role_other_ar) : null,
         role_other_fr: fields.role === "Other" ? emptyToNull(fields.role_other_fr) : null,
+        role_other_en: fields.role === "Other" ? emptyToNull(fields.role_other_en) : null,
         registration_url: emptyToNull(fields.registration_url),
         status,
       };
@@ -218,7 +256,7 @@ export function EventForm({ event }: { event?: UpcomingEvent }) {
           <input
             id="event-slug"
             value={fields.slug}
-            onChange={(input) => changeField("slug", input.target.value)}
+            onChange={(input) => changeField("slug", normalizeSlugInput(input.target.value))}
             className="rounded border border-zinc-400 bg-white px-3 py-2 text-zinc-950"
             autoCapitalize="none"
             spellCheck={false}
@@ -228,7 +266,7 @@ export function EventForm({ event }: { event?: UpcomingEvent }) {
         <p className="text-sm text-zinc-600">Status: {status}</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
         <LocalePane
           locale="Arabic"
           direction="rtl"
@@ -253,6 +291,7 @@ export function EventForm({ event }: { event?: UpcomingEvent }) {
           onVenueChange={(value) => changeField("venue_fr", value)}
           onInstitutionChange={(value) => changeField("institution_fr", value)}
         />
+        <LocalePane locale="English" direction="ltr" title={fields.title_en} body={fields.body_en} venue={fields.venue_en} institution={fields.institution_en} onTitleChange={(value) => changeField("title_en", value)} onBodyChange={(value) => changeField("body_en", value)} onVenueChange={(value) => changeField("venue_en", value)} onInstitutionChange={(value) => changeField("institution_en", value)} />
       </div>
 
       <fieldset className="flex flex-col gap-4 rounded-lg border border-zinc-300 bg-white p-4">
@@ -271,15 +310,17 @@ export function EventForm({ event }: { event?: UpcomingEvent }) {
           </select>
         </label>
         {fields.role === "Other" ? (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-3">
             <TextField label="Arabic other role" id="event-role-other-ar" value={fields.role_other_ar} onChange={(value) => changeField("role_other_ar", value)} />
             <TextField label="French other role" id="event-role-other-fr" value={fields.role_other_fr} onChange={(value) => changeField("role_other_fr", value)} />
+            <TextField label="English other role" id="event-role-other-en" value={fields.role_other_en} onChange={(value) => changeField("role_other_en", value)} />
           </div>
         ) : null}
         <TextField label="Registration URL" id="event-registration-url" type="url" value={fields.registration_url} onChange={(value) => changeField("registration_url", value)} optional />
       </fieldset>
 
       {message ? <p role="alert" className="rounded bg-zinc-100 p-3 text-sm text-zinc-800">{message}</p> : null}
+      <PublishRequirements requirements={publishRequirements} />
       <div className="flex flex-wrap gap-3">
         <button type="submit" disabled={saving || publishing} className="rounded bg-zinc-950 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">
           {saving ? "Saving..." : isPublished ? "Save changes" : "Save as draft"}
@@ -307,7 +348,7 @@ function LocalePane({
   onVenueChange,
   onInstitutionChange,
 }: {
-  locale: "Arabic" | "French";
+  locale: "Arabic" | "French" | "English";
   direction: "rtl" | "ltr";
   title: string;
   body: string;

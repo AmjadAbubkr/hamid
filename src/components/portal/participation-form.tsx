@@ -8,6 +8,8 @@ import {
   type ParticipationRole,
 } from "@/lib/content/participation-roles";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { normalizeSlugInput } from "@/lib/content/slug";
+import { PublishRequirements } from "./publish-requirements";
 
 export type PastParticipation = {
   id: string;
@@ -15,15 +17,20 @@ export type PastParticipation = {
   status: "draft" | "published";
   title_ar?: string | null;
   title_fr?: string | null;
+  title_en?: string | null;
   body_ar?: string | null;
   body_fr?: string | null;
+  body_en?: string | null;
   venue_ar?: string | null;
   venue_fr?: string | null;
+  venue_en?: string | null;
   institution_ar?: string | null;
   institution_fr?: string | null;
+  institution_en?: string | null;
   role?: ParticipationRole | null;
   role_other_ar?: string | null;
   role_other_fr?: string | null;
+  role_other_en?: string | null;
   source_url?: string | null;
   event_date?: string | null;
   event_end_date?: string | null;
@@ -34,15 +41,20 @@ type ParticipationFields = {
   slug: string;
   title_ar: string;
   title_fr: string;
+  title_en: string;
   body_ar: string;
   body_fr: string;
+  body_en: string;
   venue_ar: string;
   venue_fr: string;
+  venue_en: string;
   institution_ar: string;
   institution_fr: string;
+  institution_en: string;
   role: ParticipationRole | "";
   role_other_ar: string;
   role_other_fr: string;
+  role_other_en: string;
   source_url: string;
   event_date: string;
   event_end_date: string;
@@ -53,15 +65,20 @@ const EMPTY_FIELDS: ParticipationFields = {
   slug: "",
   title_ar: "",
   title_fr: "",
+  title_en: "",
   body_ar: "",
   body_fr: "",
+  body_en: "",
   venue_ar: "",
   venue_fr: "",
+  venue_en: "",
   institution_ar: "",
   institution_fr: "",
+  institution_en: "",
   role: "",
   role_other_ar: "",
   role_other_fr: "",
+  role_other_en: "",
   source_url: "",
   event_date: "",
   event_end_date: "",
@@ -75,15 +92,20 @@ function fieldsFrom(participation?: PastParticipation): ParticipationFields {
     slug: participation.slug,
     title_ar: participation.title_ar ?? "",
     title_fr: participation.title_fr ?? "",
+    title_en: participation.title_en ?? "",
     body_ar: participation.body_ar ?? "",
     body_fr: participation.body_fr ?? "",
+    body_en: participation.body_en ?? "",
     venue_ar: participation.venue_ar ?? "",
     venue_fr: participation.venue_fr ?? "",
+    venue_en: participation.venue_en ?? "",
     institution_ar: participation.institution_ar ?? "",
     institution_fr: participation.institution_fr ?? "",
+    institution_en: participation.institution_en ?? "",
     role: participation.role ?? "",
     role_other_ar: participation.role_other_ar ?? "",
     role_other_fr: participation.role_other_fr ?? "",
+    role_other_en: participation.role_other_en ?? "",
     source_url: participation.source_url ?? "",
     event_date: participation.event_date ?? "",
     event_end_date: participation.event_end_date ?? "",
@@ -95,8 +117,8 @@ function isFilled(value: string) {
   return value.trim().length > 0;
 }
 
-function isPaired(left: string, right: string) {
-  return isFilled(left) === isFilled(right);
+function isCompleteAcrossLocales(arabic: string, french: string, english: string) {
+  return isFilled(arabic) === isFilled(french) && isFilled(french) === isFilled(english);
 }
 
 function messageFor(error: unknown, fallback: string) {
@@ -113,23 +135,35 @@ export function ParticipationForm({ participation }: { participation?: PastParti
   const isPublished = participation?.status === "published";
 
   const roleOtherIsComplete = fields.role !== "Other" || (
-    isFilled(fields.role_other_ar) && isFilled(fields.role_other_fr)
+    isFilled(fields.role_other_ar) && isFilled(fields.role_other_fr) && isFilled(fields.role_other_en)
   );
   const eventRangeIsValid = !isFilled(fields.event_end_date)
     || (isFilled(fields.event_date) && fields.event_end_date >= fields.event_date);
   const canPublish = Boolean(participation?.id)
     && isFilled(fields.title_ar)
     && isFilled(fields.title_fr)
-    && isPaired(fields.body_ar, fields.body_fr)
+    && isFilled(fields.title_en)
+    && isCompleteAcrossLocales(fields.body_ar, fields.body_fr, fields.body_en)
     && isFilled(fields.venue_ar)
     && isFilled(fields.venue_fr)
+    && isFilled(fields.venue_en)
     && isFilled(fields.institution_ar)
     && isFilled(fields.institution_fr)
+    && isFilled(fields.institution_en)
     && isFilled(fields.event_date)
     && isFilled(fields.event_date_label)
     && isFilled(fields.role)
     && roleOtherIsComplete
     && eventRangeIsValid;
+  const publishRequirements = [
+    !participation ? "Save this draft before publishing." : "",
+    !isFilled(fields.title_ar) ? "Arabic title" : "", !isFilled(fields.title_fr) ? "French title" : "", !isFilled(fields.title_en) ? "English title" : "",
+    !isCompleteAcrossLocales(fields.body_ar, fields.body_fr, fields.body_en) ? "Summary in Arabic, French, and English — or leave all three blank" : "",
+    !isFilled(fields.venue_ar) ? "Arabic venue" : "", !isFilled(fields.venue_fr) ? "French venue" : "", !isFilled(fields.venue_en) ? "English venue" : "",
+    !isFilled(fields.institution_ar) ? "Arabic institution" : "", !isFilled(fields.institution_fr) ? "French institution" : "", !isFilled(fields.institution_en) ? "English institution" : "",
+    !isFilled(fields.event_date) ? "Sortable event date" : "", !isFilled(fields.event_date_label) ? "Published date label" : "", !isFilled(fields.role) ? "Role" : "",
+    !roleOtherIsComplete ? "Other role in Arabic, French, and English" : "", !eventRangeIsValid ? "An event end date on or after the start date" : "",
+  ].filter(Boolean);
 
   function changeField(name: keyof ParticipationFields, value: string) {
     setFields((current) => ({ ...current, [name]: value }));
@@ -154,15 +188,20 @@ export function ParticipationForm({ participation }: { participation?: PastParti
         slug: fields.slug.trim(),
         title_ar: fields.title_ar,
         title_fr: fields.title_fr,
+        title_en: fields.title_en,
         body_ar: emptyToNull(fields.body_ar),
         body_fr: emptyToNull(fields.body_fr),
+        body_en: emptyToNull(fields.body_en),
         venue_ar: fields.venue_ar,
         venue_fr: fields.venue_fr,
+        venue_en: fields.venue_en,
         institution_ar: fields.institution_ar,
         institution_fr: fields.institution_fr,
+        institution_en: fields.institution_en,
         role: fields.role || null,
         role_other_ar: fields.role === "Other" ? emptyToNull(fields.role_other_ar) : null,
         role_other_fr: fields.role === "Other" ? emptyToNull(fields.role_other_fr) : null,
+        role_other_en: fields.role === "Other" ? emptyToNull(fields.role_other_en) : null,
         source_url: emptyToNull(fields.source_url),
         event_date: emptyToNull(fields.event_date),
         event_end_date: emptyToNull(fields.event_end_date),
@@ -234,7 +273,7 @@ export function ParticipationForm({ participation }: { participation?: PastParti
           <input
             id="participation-slug"
             value={fields.slug}
-            onChange={(event) => changeField("slug", event.target.value)}
+            onChange={(event) => changeField("slug", normalizeSlugInput(event.target.value))}
             className="rounded border border-zinc-400 bg-white px-3 py-2 text-zinc-950"
             autoCapitalize="none"
             spellCheck={false}
@@ -244,7 +283,7 @@ export function ParticipationForm({ participation }: { participation?: PastParti
         <p className="text-sm text-zinc-600">Status: {status}</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
         <LocalePane
           locale="Arabic"
           direction="rtl"
@@ -269,6 +308,7 @@ export function ParticipationForm({ participation }: { participation?: PastParti
           onVenueChange={(value) => changeField("venue_fr", value)}
           onInstitutionChange={(value) => changeField("institution_fr", value)}
         />
+        <LocalePane locale="English" direction="ltr" title={fields.title_en} body={fields.body_en} venue={fields.venue_en} institution={fields.institution_en} onTitleChange={(value) => changeField("title_en", value)} onBodyChange={(value) => changeField("body_en", value)} onVenueChange={(value) => changeField("venue_en", value)} onInstitutionChange={(value) => changeField("institution_en", value)} />
       </div>
 
       <fieldset className="flex flex-col gap-4 rounded-lg border border-zinc-300 bg-white p-4">
@@ -286,9 +326,10 @@ export function ParticipationForm({ participation }: { participation?: PastParti
           </select>
         </label>
         {fields.role === "Other" ? (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-3">
             <TextField label="Arabic other role" id="participation-role-other-ar" value={fields.role_other_ar} onChange={(value) => changeField("role_other_ar", value)} />
             <TextField label="French other role" id="participation-role-other-fr" value={fields.role_other_fr} onChange={(value) => changeField("role_other_fr", value)} />
+            <TextField label="English other role" id="participation-role-other-en" value={fields.role_other_en} onChange={(value) => changeField("role_other_en", value)} />
           </div>
         ) : null}
         <div className="grid gap-4 sm:grid-cols-2">
@@ -301,6 +342,7 @@ export function ParticipationForm({ participation }: { participation?: PastParti
       </fieldset>
 
       {message ? <p role="alert" className="rounded bg-zinc-100 p-3 text-sm text-zinc-800">{message}</p> : null}
+      <PublishRequirements requirements={publishRequirements} />
       <div className="flex flex-wrap gap-3">
         <button type="submit" disabled={saving || publishing} className="rounded bg-zinc-950 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">
           {saving ? "Saving..." : "Save as draft"}
@@ -327,7 +369,7 @@ function LocalePane({
   onVenueChange,
   onInstitutionChange,
 }: {
-  locale: "Arabic" | "French";
+  locale: "Arabic" | "French" | "English";
   direction: "rtl" | "ltr";
   title: string;
   body: string;

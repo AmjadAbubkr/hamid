@@ -34,10 +34,10 @@ describe("LocaleSwitcher", () => {
 
     render(<LocaleSwitcher locale="fr" />);
 
-    expect(screen.getByRole("link", { name: "fr" })).toHaveAttribute("href", "/fr/about");
-    expect(screen.getByRole("link", { name: "fr" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "ar" })).toHaveAttribute("href", "/ar/about");
-    expect(screen.getByRole("link", { name: "en" })).toHaveAttribute("href", "/en/about");
+    expect(screen.getByRole("link", { name: "Fran\u00e7ais" })).toHaveAttribute("href", "/fr/about");
+    expect(screen.getByRole("link", { name: "Fran\u00e7ais" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "\u0627\u0644\u0639\u0631\u0628\u064a\u0629" })).toHaveAttribute("href", "/ar/about");
+    expect(screen.getByRole("link", { name: "English" })).toHaveAttribute("href", "/en/about");
   });
 
   it("marks the English link active on an English page", () => {
@@ -45,8 +45,8 @@ describe("LocaleSwitcher", () => {
 
     render(<LocaleSwitcher locale="en" />);
 
-    expect(screen.getByRole("link", { name: "en" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "en" })).toHaveAttribute("href", "/en/articles/an-essay");
-    expect(screen.getByRole("link", { name: "en" })).toHaveAttribute("aria-label", "English");
+    expect(screen.getByRole("link", { name: "English" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "English" })).toHaveAttribute("href", "/en/articles/an-essay");
+    expect(screen.getByRole("link", { name: "English" })).toHaveAttribute("aria-label", "English");
   });
 });

@@ -119,6 +119,119 @@ body {
   line-height: 1.6;
 }
 
+/* Portal â€” shares the public site's dark institutional palette. Legacy
+   admin utilities are scoped here so old light surfaces cannot produce
+   ivory text on white backgrounds. */
+.portal-shell .bg-white {
+  background-color: var(--color-surface) !important;
+}
+
+.portal-shell .bg-zinc-950 {
+  background-color: var(--color-gold) !important;
+}
+
+.portal-shell .bg-zinc-950.text-white,
+.portal-shell .bg-zinc-950 .text-white {
+  color: var(--color-navy) !important;
+}
+
+.portal-shell input,
+.portal-shell textarea,
+.portal-shell select {
+  background-color: var(--color-surface-low);
+  color: var(--color-ink);
+  border-color: var(--color-line);
+}
+
+.portal-shell input:focus,
+.portal-shell textarea:focus,
+.portal-shell select:focus {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+.portal-shell a.underline {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-gold);
+  padding: 0.5rem 0.875rem;
+  color: var(--color-gold);
+  text-decoration: none;
+  transition-property: background-color, color, transform;
+  transition-duration: 180ms;
+  transition-timing-function: var(--ease-soft);
+}
+
+.portal-shell a.underline:hover {
+  background-color: var(--color-gold);
+  color: var(--color-navy);
+}
+
+.portal-shell a.underline:active,
+.portal-shell button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.portal-back-button {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--color-line);
+  background: transparent;
+  padding: 0.5rem 0.875rem;
+  color: var(--color-ink-700);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition-property: border-color, color, background-color, transform;
+  transition-duration: 180ms;
+  transition-timing-function: var(--ease-soft);
+}
+
+.portal-back-button:hover {
+  border-color: var(--color-gold);
+  background: var(--color-surface-low);
+  color: var(--color-gold);
+}
+
+.portal-dashboard-link {
+  display: flex;
+  min-height: 7.25rem;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 1px solid var(--color-line);
+  border-top-color: var(--color-gold);
+  border-top-width: 2px;
+  background: var(--color-surface-low);
+  padding: 1.25rem;
+  color: var(--color-ink);
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--shadow-ambient);
+  transition-property: background-color, border-color, transform, box-shadow;
+  transition-duration: 180ms;
+  transition-timing-function: var(--ease-soft);
+}
+
+.portal-dashboard-link span {
+  color: var(--color-ink-600);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+.portal-dashboard-link:hover {
+  background: var(--color-surface-high);
+  border-color: var(--color-gold);
+  box-shadow: var(--shadow-ambient-hover);
+  transform: translateY(-2px);
+}
+
 /* Arabic typography: switch the document to the Naskh face + tighter weight. */
 html[dir="rtl"] body,
 html[dir="rtl"] {

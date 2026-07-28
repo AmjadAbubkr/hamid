@@ -2,6 +2,9 @@
 
 import { useRef, useState, type DragEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { normalizeSlugInput } from "@/lib/content/slug";
+import { PublishRequirements } from "./publish-requirements";
+import { usePortalLocale } from "./portal-locale-provider";
 
 export const GALLERY_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 
@@ -14,33 +17,42 @@ export type GalleryPhoto = {
   storage_path?: string | null;
   caption_ar?: string | null;
   caption_fr?: string | null;
+  caption_en?: string | null;
   taken_date?: string | null;
   photographer_credit_ar?: string | null;
   photographer_credit_fr?: string | null;
+  photographer_credit_en?: string | null;
   category_ar?: string | null;
   category_fr?: string | null;
+  category_en?: string | null;
 };
 
 type GalleryFields = {
   slug: string;
   caption_ar: string;
   caption_fr: string;
+  caption_en: string;
   taken_date: string;
   photographer_credit_ar: string;
   photographer_credit_fr: string;
+  photographer_credit_en: string;
   category_ar: string;
   category_fr: string;
+  category_en: string;
 };
 
 const EMPTY_FIELDS: GalleryFields = {
   slug: "",
   caption_ar: "",
   caption_fr: "",
+  caption_en: "",
   taken_date: "",
   photographer_credit_ar: "",
   photographer_credit_fr: "",
+  photographer_credit_en: "",
   category_ar: "",
   category_fr: "",
+  category_en: "",
 };
 
 function fieldsFrom(photo?: GalleryPhoto): GalleryFields {
@@ -50,11 +62,14 @@ function fieldsFrom(photo?: GalleryPhoto): GalleryFields {
     slug: photo.slug,
     caption_ar: photo.caption_ar ?? "",
     caption_fr: photo.caption_fr ?? "",
+    caption_en: photo.caption_en ?? "",
     taken_date: photo.taken_date ?? "",
     photographer_credit_ar: photo.photographer_credit_ar ?? "",
     photographer_credit_fr: photo.photographer_credit_fr ?? "",
+    photographer_credit_en: photo.photographer_credit_en ?? "",
     category_ar: photo.category_ar ?? "",
     category_fr: photo.category_fr ?? "",
+    category_en: photo.category_en ?? "",
   };
 }
 
@@ -62,8 +77,8 @@ function isFilled(value: string) {
   return value.trim().length > 0;
 }
 
-function isPaired(left: string, right: string) {
-  return isFilled(left) === isFilled(right);
+function isCompleteAcrossLocales(arabic: string, french: string, english: string) {
+  return isFilled(arabic) === isFilled(french) && isFilled(french) === isFilled(english);
 }
 
 function clientImageError(file: File): string | null {
@@ -82,6 +97,7 @@ function messageFor(error: unknown, fallback: string) {
 
 export function GalleryForm({ photo }: { photo?: GalleryPhoto }) {
   const router = useRouter();
+  const { t } = usePortalLocale();
   const fileInput = useRef<HTMLInputElement>(null);
   const [fields, setFields] = useState(() => fieldsFrom(photo));
   const [status, setStatus] = useState(photo?.status ?? "draft");
@@ -95,10 +111,18 @@ export function GalleryForm({ photo }: { photo?: GalleryPhoto }) {
   const canPublish = Boolean(photo?.id)
     && isFilled(fields.caption_ar)
     && isFilled(fields.caption_fr)
+    && isFilled(fields.caption_en)
     && isFilled(fields.taken_date)
-    && isPaired(fields.photographer_credit_ar, fields.photographer_credit_fr)
-    && isPaired(fields.category_ar, fields.category_fr)
+    && isCompleteAcrossLocales(fields.photographer_credit_ar, fields.photographer_credit_fr, fields.photographer_credit_en)
+    && isCompleteAcrossLocales(fields.category_ar, fields.category_fr, fields.category_en)
     && Boolean(image || photo?.storage_path);
+  const publishRequirements = [
+    !photo ? "Save this draft before publishing." : "",
+    !isFilled(fields.caption_ar) ? "Arabic caption" : "", !isFilled(fields.caption_fr) ? "French caption" : "", !isFilled(fields.caption_en) ? "English caption" : "",
+    !isFilled(fields.taken_date) ? "Date taken" : "", !(image || photo?.storage_path) ? "Gallery image" : "",
+    !isCompleteAcrossLocales(fields.photographer_credit_ar, fields.photographer_credit_fr, fields.photographer_credit_en) ? "Photographer credit in Arabic, French, and English — or leave all three blank" : "",
+    !isCompleteAcrossLocales(fields.category_ar, fields.category_fr, fields.category_en) ? "Category in Arabic, French, and English — or leave all three blank" : "",
+  ].filter(Boolean);
 
   function changeField(name: keyof GalleryFields, value: string) {
     setFields((current) => ({ ...current, [name]: value }));
@@ -184,18 +208,18 @@ export function GalleryForm({ photo }: { photo?: GalleryPhoto }) {
 
       <section className="flex flex-col gap-4 rounded border border-line border-t-2 border-t-gold-300 bg-surface p-5">
         <label className="flex flex-col gap-2 text-sm font-semibold text-ink" htmlFor="gallery-slug">
-          URL slug
+          {t("URL slug")}
           <input
             id="gallery-slug"
             value={fields.slug}
-            onChange={(event) => changeField("slug", event.target.value)}
+            onChange={(event) => changeField("slug", normalizeSlugInput(event.target.value))}
             className="border-b border-line-soft bg-transparent px-1 py-2 text-ink outline-none focus:border-b-2 focus:border-gold"
             autoCapitalize="none"
             spellCheck={false}
             required
           />
         </label>
-        <p className="text-sm text-ink-700">Status: {status}</p>
+        <p className="text-sm text-ink-700">{t("Status:")} {t(status)}</p>
       </section>
 
       <section className="flex flex-col gap-4 rounded border border-line border-t-2 border-t-gold-300 bg-surface p-5" aria-labelledby="gallery-image-title">
@@ -230,7 +254,7 @@ export function GalleryForm({ photo }: { photo?: GalleryPhoto }) {
         {imageError ? <p role="alert" className="text-sm text-red-300">{imageError}</p> : null}
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
         <LocalePane
           locale="Arabic"
           direction="rtl"
@@ -251,6 +275,7 @@ export function GalleryForm({ photo }: { photo?: GalleryPhoto }) {
           onCreditChange={(value) => changeField("photographer_credit_fr", value)}
           onCategoryChange={(value) => changeField("category_fr", value)}
         />
+        <LocalePane locale="English" direction="ltr" caption={fields.caption_en} credit={fields.photographer_credit_en} category={fields.category_en} onCaptionChange={(value) => changeField("caption_en", value)} onCreditChange={(value) => changeField("photographer_credit_en", value)} onCategoryChange={(value) => changeField("category_en", value)} />
       </div>
 
       <section className="rounded border border-line border-t-2 border-t-gold-300 bg-surface p-5">
@@ -258,13 +283,14 @@ export function GalleryForm({ photo }: { photo?: GalleryPhoto }) {
       </section>
 
       {message ? <p role="alert" className="rounded border border-line bg-surface-low p-3 text-sm text-ink">{message}</p> : null}
+      <PublishRequirements requirements={publishRequirements} />
       <div className="flex flex-wrap gap-3">
         <button type="submit" disabled={saving || publishing || unpublishing} className="rounded bg-gold px-4 py-2 font-semibold text-navy disabled:cursor-not-allowed disabled:opacity-60">
-          {saving ? "Saving..." : isPublished ? "Save changes" : "Save as draft"}
+          {saving ? t("Saving...") : isPublished ? t("Save changes") : t("Save as draft")}
         </button>
         {!isPublished ? (
           <button type="button" disabled={!canPublish || saving || publishing || unpublishing} onClick={() => void save("publish")} className="rounded border border-gold px-4 py-2 font-semibold text-gold disabled:cursor-not-allowed disabled:opacity-60">
-            {publishing ? "Publishing..." : "Publish"}
+            {publishing ? t("Publishing...") : t("Publish")}
           </button>
         ) : (
           <button type="button" disabled={saving || publishing || unpublishing} onClick={() => void save("unpublish")} className="rounded border border-gold px-4 py-2 font-semibold text-gold disabled:cursor-not-allowed disabled:opacity-60">
@@ -287,7 +313,7 @@ function LocalePane({
   onCreditChange,
   onCategoryChange,
 }: {
-  locale: "Arabic" | "French";
+  locale: "Arabic" | "French" | "English";
   direction: "rtl" | "ltr";
   caption: string;
   credit: string;

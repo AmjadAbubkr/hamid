@@ -24,7 +24,7 @@ describe("PositionForm", () => {
     vi.resetAllMocks();
   });
 
-  it("saves an incomplete bilingual draft for the current Editor", async () => {
+  it("saves an incomplete three-locale draft for the current Editor", async () => {
     const single = vi.fn().mockResolvedValue({
       data: { id: "position-id", slug: "draft-position", status: "draft" },
       error: null,
@@ -35,7 +35,7 @@ describe("PositionForm", () => {
     mocks.rpc.mockResolvedValue({ data: "editor-id", error: null });
 
     render(<PositionForm />);
-    fireEvent.change(screen.getByLabelText("URL slug"), { target: { value: "draft-position" } });
+    fireEvent.change(screen.getByLabelText("URL slug"), { target: { value: "draft position" } });
     fireEvent.click(screen.getByRole("button", { name: "Save as draft" }));
 
     await waitFor(() => expect(insert).toHaveBeenCalledTimes(1));
@@ -44,6 +44,7 @@ describe("PositionForm", () => {
       slug: "draft-position",
       title_ar: "",
       title_fr: "",
+      title_en: "",
       status: "draft",
     }));
     expect(mocks.replace).toHaveBeenCalledWith("/portal/positions/draft-position");
@@ -54,9 +55,12 @@ describe("PositionForm", () => {
 
     const publish = screen.getByRole("button", { name: "Publish" });
     expect(publish).toBeDisabled();
+    expect(screen.getByRole("status")).toHaveTextContent("Arabic title");
+    expect(screen.getByRole("status")).toHaveTextContent("English title");
 
     fireEvent.change(screen.getByLabelText("Arabic title"), { target: { value: "مفتش" } });
     fireEvent.change(screen.getByLabelText("French title"), { target: { value: "Inspecteur" } });
+    fireEvent.change(screen.getByLabelText("English title"), { target: { value: "Inspector" } });
     fireEvent.change(screen.getByLabelText("Institution"), { target: { value: "Ministère" } });
     fireEvent.change(screen.getByLabelText("Start date"), { target: { value: "2026-05-22" } });
     fireEvent.change(screen.getByLabelText("Location"), { target: { value: "N'Djamena" } });
@@ -74,6 +78,7 @@ describe("PositionForm", () => {
       status: "draft",
       title_ar: "مفتش",
       title_fr: "Inspecteur",
+      title_en: "Inspector",
       institution: "Ministère",
       start_date: "2026-05-22",
       location: "N'Djamena",

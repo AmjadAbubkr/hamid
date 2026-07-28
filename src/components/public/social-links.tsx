@@ -88,25 +88,17 @@ function FacebookIcon({ className }: { className: string }) {
 
 function InstagramIcon({ className }: { className: string }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-      className={className}
-    >
-      <path d="M12 0C5.37 0 0 5.37 0 12c0 6.63 5.37 12 12 12s12-5.37 12-12S18.63 0 12 0m5.52 8.06h-.76c-.05-.01-.1-.01-.15-.01-1.23 0-2.23 1-2.23 2.23v.76h2.99l-.44 2.99h-2.55v7.7h-3.1v-7.7H9.5v-2.99h1.78v-.63c0-1.76.85-2.79 2.72-2.79.77 0 1.44.06 1.63.08v1.89z" />
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
+      <rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="2" />
+      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2" />
+      <circle cx="17.5" cy="6.5" r="1.25" fill="currentColor" />
     </svg>
   );
 }
 
 function XIcon({ className }: { className: string }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-      className={className}
-    >
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.338-6.996-6.113 6.996H1.674l7.732-8.835L1.249 2.25H8.08l4.713 6.231 5.45-6.231zM17.002 18.807h1.83L6.075 3.957H4.146l12.856 14.85z" />
     </svg>
   );
@@ -140,24 +132,12 @@ export function SocialLinks({ locale, variant }: SocialLinksProps) {
         </a>
       </li>
       <li>
-        <a
-          href={SOCIAL_LINKS.instagram}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={textFor(locale, SOCIAL_ARIA.instagram)}
-          className={styles.itemClassName}
-        >
+        <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noopener noreferrer" aria-label={textFor(locale, SOCIAL_ARIA.instagram)} className={styles.itemClassName}>
           <InstagramIcon className={styles.iconClassName} />
         </a>
       </li>
       <li>
-        <a
-          href={SOCIAL_LINKS.x}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={textFor(locale, SOCIAL_ARIA.x)}
-          className={styles.itemClassName}
-        >
+        <a href={SOCIAL_LINKS.x} target="_blank" rel="noopener noreferrer" aria-label={textFor(locale, SOCIAL_ARIA.x)} className={styles.itemClassName}>
           <XIcon className={styles.iconClassName} />
         </a>
       </li>

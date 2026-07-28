@@ -11,11 +11,14 @@ type ArticleRequest = {
   slug?: unknown;
   title_ar?: unknown;
   title_fr?: unknown;
+  title_en?: unknown;
   body_ar?: unknown;
   body_fr?: unknown;
+  body_en?: unknown;
   published_in_url?: unknown;
   published_in_name_ar?: unknown;
   published_in_name_fr?: unknown;
+  published_in_name_en?: unknown;
   published_date?: unknown;
   action?: unknown;
 };
@@ -86,11 +89,14 @@ function articleFieldsFrom(payload: ArticleRequest) {
     slug,
     title_ar: stringOrEmpty(payload.title_ar),
     title_fr: stringOrEmpty(payload.title_fr),
+    title_en: stringOrEmpty(payload.title_en),
     body_ar: sanitizeArticleHtml(stringOrEmpty(payload.body_ar)),
     body_fr: sanitizeArticleHtml(stringOrEmpty(payload.body_fr)),
+    body_en: sanitizeArticleHtml(stringOrEmpty(payload.body_en)),
     published_in_url: publishedInUrl,
     published_in_name_ar: emptyToNull(payload.published_in_name_ar),
     published_in_name_fr: emptyToNull(payload.published_in_name_fr),
+    published_in_name_en: emptyToNull(payload.published_in_name_en),
     published_date: emptyToNull(payload.published_date),
   };
 }

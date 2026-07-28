@@ -156,11 +156,14 @@ function galleryFieldsFrom(formData: FormData) {
     slug,
     caption_ar: stringOrEmpty(formData.get("caption_ar")),
     caption_fr: stringOrEmpty(formData.get("caption_fr")),
+    caption_en: stringOrEmpty(formData.get("caption_en")),
     taken_date: emptyToNull(formData.get("taken_date")),
     photographer_credit_ar: emptyToNull(formData.get("photographer_credit_ar")),
     photographer_credit_fr: emptyToNull(formData.get("photographer_credit_fr")),
+    photographer_credit_en: emptyToNull(formData.get("photographer_credit_en")),
     category_ar: emptyToNull(formData.get("category_ar")),
     category_fr: emptyToNull(formData.get("category_fr")),
+    category_en: emptyToNull(formData.get("category_en")),
   };
 }
 

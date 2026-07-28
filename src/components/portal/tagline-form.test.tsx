@@ -13,7 +13,7 @@ import { TaglineForm } from "./tagline-form";
 describe("TaglineForm", () => {
   beforeEach(() => vi.resetAllMocks());
 
-  it("loads the one protected record and prevents an incomplete bilingual publish", async () => {
+  it("loads the one protected record and prevents an incomplete three-locale publish", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
       tagline: { id: "tagline-id", status: "draft", tagline_ar: "سطر", tagline_fr: "" },
     }), { status: 200 })));
@@ -38,6 +38,7 @@ describe("TaglineForm", () => {
     render(<TaglineForm />);
     fireEvent.change(await screen.findByLabelText("Arabic Tagline"), { target: { value: "سطر" } });
     fireEvent.change(screen.getByLabelText("French Tagline"), { target: { value: "Une phrase" } });
+    fireEvent.change(screen.getByLabelText("English Tagline"), { target: { value: "A sentence" } });
     fireEvent.click(screen.getByRole("button", { name: "Save as draft" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));

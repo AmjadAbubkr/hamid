@@ -52,6 +52,20 @@ describe("ArticleForm", () => {
     expect(screen.queryByText(/Statement or Communiqu/i)).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("French title"), { target: { value: "Communiqué officiel" } });
-    expect(screen.getByRole("status")).toHaveTextContent("Site-original content only");
+    expect(screen.getByText(/Site-original content only/i)).toBeInTheDocument();
+  });
+
+  it("copies the public article link only after publication", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+
+    const { rerender } = render(<ArticleForm article={{ id: "article-id", slug: "essay", status: "draft" }} />);
+    expect(screen.getByRole("button", { name: "Copy article link" })).toBeDisabled();
+
+    rerender(<ArticleForm key="published" article={{ id: "article-id", slug: "essay", status: "published" }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Copy article link" }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/en/articles/essay`));
+    expect(screen.getByRole("status")).toHaveTextContent("Article link copied");
   });
 });

@@ -19,7 +19,7 @@ export default async function EditArticlePage({ params }: { params: Promise<{ sl
 
   const { data, error } = await supabase
     .from("article")
-    .select("id, slug, status, title_ar, title_fr, body_ar, body_fr, published_in_url, published_in_name_ar, published_in_name_fr, published_date")
+    .select("id, slug, status, title_ar, title_fr, title_en, body_ar, body_fr, body_en, published_in_url, published_in_name_ar, published_in_name_fr, published_in_name_en, published_date")
     .eq("slug", slug)
     .eq("author_editor_id", editorId)
     .maybeSingle();
