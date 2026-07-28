@@ -35,7 +35,7 @@ export function EmailAccessControls() {
         {t("Email")}
         <input id="portal-access-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" className="rounded border border-line bg-surface px-3 py-2 text-ink" required />
       </label>
-      <button type="button" onClick={sendSetupLink} disabled={!email || setupState === "sending"} className="rounded bg-ink px-4 py-3 text-base font-semibold text-white transition-transform active:scale-[0.96] disabled:opacity-60">
+      <button type="button" onClick={sendSetupLink} disabled={!email || setupState === "sending"} className="rounded bg-zinc-950 px-4 py-3 text-base font-semibold text-white transition-transform active:scale-[0.96] disabled:opacity-60">
         {setupState === "sending" ? t("Sending…") : t("Set up or reset password")}
       </button>
       <button type="button" onClick={() => setShowPassword(true)} disabled={!email} className="min-h-10 px-1 text-sm font-semibold text-gold underline underline-offset-4 disabled:opacity-60">
