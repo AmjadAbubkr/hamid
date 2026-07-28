@@ -62,10 +62,16 @@ export function PasskeyLoginControls() {
   );
 }
 
-export function EmailPasswordLoginControls() {
+export function EmailPasswordLoginControls({
+  email: initialEmail = "",
+  showEmail = true,
+}: {
+  email?: string;
+  showEmail?: boolean;
+} = {}) {
   const router = useRouter();
   const { t } = usePortalLocale();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [action, setAction] = useState<ActionState>("idle");
   const [message, setMessage] = useState("");
@@ -83,7 +89,7 @@ export function EmailPasswordLoginControls() {
       router.replace("/portal");
     } catch (error) {
       setAction("error");
-      setMessage(errorMessage(error, t("Development password sign-in could not be completed.")));
+      setMessage(errorMessage(error, t("Email and password sign-in could not be completed.")));
       return;
     }
     setAction("idle");
@@ -92,15 +98,17 @@ export function EmailPasswordLoginControls() {
   return (
     <form onSubmit={signIn} className="flex flex-col gap-3 border-t border-line pt-6" aria-label="Email and password authentication">
       <p className="text-sm text-muted">{t("Use email and password if your passkey is unavailable.")}</p>
-      <label className="flex flex-col gap-1 text-sm font-medium text-ink" htmlFor="portal-email">
-        {t("Email")}
-        <input id="portal-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" className="rounded border border-line bg-surface px-3 py-2 text-ink" required />
-      </label>
+      {showEmail ? (
+        <label className="flex flex-col gap-1 text-sm font-medium text-ink" htmlFor="portal-email">
+          {t("Email")}
+          <input id="portal-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" className="rounded border border-line bg-surface px-3 py-2 text-ink" required />
+        </label>
+      ) : null}
       <label className="flex flex-col gap-1 text-sm font-medium text-ink" htmlFor="portal-password">
         {t("Password")}
         <input id="portal-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" className="rounded border border-line bg-surface px-3 py-2 text-ink" required />
       </label>
-      <button type="submit" disabled={action === "working"} className="rounded border border-ink px-4 py-3 text-base font-semibold text-ink disabled:opacity-60">
+      <button type="submit" disabled={action === "working"} className="rounded border border-ink px-4 py-3 text-base font-semibold text-ink transition-transform active:scale-[0.96] disabled:opacity-60">
         {action === "working" ? t("Signing in…") : t("Sign in with email and password")}
       </button>
       <a href="/portal/password-reset" className="text-sm font-semibold text-gold underline underline-offset-4">{t("Forgot password?")}</a>
