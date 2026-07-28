@@ -2,8 +2,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import {
+  EmailPasswordLoginControls,
   PasskeyLoginControls,
   PasskeyReEnrollment,
+  PasswordResetRequestForm,
+  PasswordUpdateForm,
   PortalLogout,
   RecoveryCodeDisplay,
   RecoveryCodeForm,
@@ -12,8 +15,11 @@ import {
 const replace = vi.fn();
 const supabaseAuth = {
   signInWithPasskey: vi.fn(),
+  signInWithPassword: vi.fn(),
   registerPasskey: vi.fn(),
+  resetPasswordForEmail: vi.fn(),
   signOut: vi.fn(),
+  updateUser: vi.fn(),
 };
 
 vi.mock("next/navigation", () => ({
@@ -28,8 +34,11 @@ describe("Portal authentication controls", () => {
   beforeEach(() => {
     replace.mockReset();
     supabaseAuth.signInWithPasskey.mockReset();
+    supabaseAuth.signInWithPassword.mockReset();
     supabaseAuth.registerPasskey.mockReset();
+    supabaseAuth.resetPasswordForEmail.mockReset();
     supabaseAuth.signOut.mockReset();
+    supabaseAuth.updateUser.mockReset();
     vi.unstubAllGlobals();
   });
 
@@ -44,6 +53,41 @@ describe("Portal authentication controls", () => {
       expect(replace).toHaveBeenCalledWith("/portal");
     });
     expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
+  });
+
+  it("signs an existing Editor in with their email and password", async () => {
+    supabaseAuth.signInWithPassword.mockResolvedValue({ data: {}, error: null });
+    render(<EmailPasswordLoginControls />);
+
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "editor@example.com" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "secure-password" } });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in with email and password" }));
+
+    await waitFor(() => {
+      expect(supabaseAuth.signInWithPassword).toHaveBeenCalledWith({ email: "editor@example.com", password: "secure-password" });
+      expect(replace).toHaveBeenCalledWith("/portal");
+    });
+  });
+
+  it("does not disclose whether an email address has a Portal account during password reset", async () => {
+    supabaseAuth.resetPasswordForEmail.mockRejectedValue(new Error("User not found"));
+    render(<PasswordResetRequestForm />);
+
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "unknown@example.com" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send password-reset link" }));
+
+    expect(await screen.findByText(/If this email belongs to an Editor account/i)).toBeInTheDocument();
+  });
+
+  it("requires matching passwords before updating an Editor password", async () => {
+    render(<PasswordUpdateForm />);
+
+    fireEvent.change(screen.getByLabelText("New password"), { target: { value: "a-secure-password" } });
+    fireEvent.change(screen.getByLabelText("Confirm new password"), { target: { value: "different-password" } });
+    fireEvent.click(screen.getByRole("button", { name: "Set new password" }));
+
+    expect(await screen.findByText("The passwords do not match.")).toBeInTheDocument();
+    expect(supabaseAuth.updateUser).not.toHaveBeenCalled();
   });
 
   it("starts authenticated passkey enrollment without exposing a public signup", async () => {
