@@ -10,6 +10,8 @@ import {
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { normalizeSlugInput } from "@/lib/content/slug";
 import { PublishRequirements } from "./publish-requirements";
+import { DeleteContentButton } from "./delete-content-button";
+import { ContentImageUpload, uploadContentImage } from "./content-image-upload";
 
 export type UpcomingEvent = {
   id: string;
@@ -118,7 +120,9 @@ function emptyToNull(value: string): string | null {
 }
 
 function messageFor(error: unknown, fallback: string) {
-  return error instanceof Error && error.message ? error.message : fallback;
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "object" && error && "message" in error && typeof error.message === "string") return error.message;
+  return fallback;
 }
 
 export function EventForm({ event }: { event?: UpcomingEvent }) {
@@ -127,6 +131,7 @@ export function EventForm({ event }: { event?: UpcomingEvent }) {
   const [status, setStatus] = useState(event?.status ?? "draft");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [publishing, setPublishing] = useState(false);
   const isPublished = status === "published";
   const roleOtherIsComplete = fields.role !== "Other" || (
@@ -196,6 +201,7 @@ export function EventForm({ event }: { event?: UpcomingEvent }) {
       if (event) {
         const { error } = await supabase.from("upcoming_event").update(data).eq("id", event.id);
         if (error) throw error;
+        if (imageFile) await uploadContentImage("upcoming_event", event.id, imageFile);
         setMessage("Saved.");
         router.refresh();
         return;
@@ -212,6 +218,7 @@ export function EventForm({ event }: { event?: UpcomingEvent }) {
         .select("id, slug, status")
         .single();
       if (error || !created) throw error ?? new Error("The Upcoming Event could not be created.");
+      if (imageFile) await uploadContentImage("upcoming_event", created.id, imageFile);
 
       router.replace(`/portal/events/${created.slug}`);
     } catch (error) {
@@ -318,6 +325,7 @@ export function EventForm({ event }: { event?: UpcomingEvent }) {
         ) : null}
         <TextField label="Registration URL" id="event-registration-url" type="url" value={fields.registration_url} onChange={(value) => changeField("registration_url", value)} optional />
       </fieldset>
+      <ContentImageUpload file={imageFile} onFileChange={setImageFile} disabled={saving || publishing} />
 
       {message ? <p role="alert" className="rounded bg-zinc-100 p-3 text-sm text-zinc-800">{message}</p> : null}
       <PublishRequirements requirements={publishRequirements} />
@@ -331,6 +339,7 @@ export function EventForm({ event }: { event?: UpcomingEvent }) {
           </button>
         ) : null}
       </div>
+      {event ? <DeleteContentButton itemType="upcoming_event" id={event.id} returnTo="/portal/events" /> : null}
       {!event ? <p className="text-sm text-zinc-600">Save the draft before publishing it.</p> : null}
     </form>
   );

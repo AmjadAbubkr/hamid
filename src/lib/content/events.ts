@@ -25,10 +25,11 @@ export type UpcomingEvent = {
   roleOtherFr: string | null;
   roleOtherEn: string | null;
   registrationUrl: string | null;
+  imagePath: string | null;
 };
 
 const EVENT_FIELDS =
-  "slug,title_ar,title_fr,title_en,body_ar,body_fr,body_en,event_date,venue_ar,venue_fr,venue_en,institution_ar,institution_fr,institution_en,role,role_other_ar,role_other_fr,role_other_en,registration_url";
+  "slug,title_ar,title_fr,title_en,body_ar,body_fr,body_en,event_date,venue_ar,venue_fr,venue_en,institution_ar,institution_fr,institution_en,role,role_other_ar,role_other_fr,role_other_en,registration_url,image_path";
 
 type UpcomingEventRow = {
   slug: string;
@@ -50,6 +51,7 @@ type UpcomingEventRow = {
   role_other_fr: string | null;
   role_other_en: string | null;
   registration_url: string | null;
+  image_path: string | null;
 };
 
 function toUpcomingEvent(row: UpcomingEventRow): UpcomingEvent {
@@ -73,6 +75,7 @@ function toUpcomingEvent(row: UpcomingEventRow): UpcomingEvent {
     roleOtherFr: row.role_other_fr,
     roleOtherEn: row.role_other_en,
     registrationUrl: row.registration_url,
+    imagePath: row.image_path,
   };
 }
 

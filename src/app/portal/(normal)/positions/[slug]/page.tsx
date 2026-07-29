@@ -19,7 +19,7 @@ export default async function EditPositionPage({ params }: { params: Promise<{ s
 
   const { data, error } = await supabase
     .from("position_held")
-    .select("id, slug, status, title_ar, title_fr, body_ar, body_fr, institution, start_date, end_date, location, published_at")
+    .select("id, slug, status, title_ar, title_fr, title_en, body_ar, body_fr, body_en, institution, start_date, end_date, location, published_at")
     .eq("slug", slug)
     .eq("author_editor_id", editorId)
     .maybeSingle();

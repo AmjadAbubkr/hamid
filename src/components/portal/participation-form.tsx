@@ -10,6 +10,8 @@ import {
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { normalizeSlugInput } from "@/lib/content/slug";
 import { PublishRequirements } from "./publish-requirements";
+import { DeleteContentButton } from "./delete-content-button";
+import { ContentImageUpload, uploadContentImage } from "./content-image-upload";
 
 export type PastParticipation = {
   id: string;
@@ -122,7 +124,9 @@ function isCompleteAcrossLocales(arabic: string, french: string, english: string
 }
 
 function messageFor(error: unknown, fallback: string) {
-  return error instanceof Error && error.message ? error.message : fallback;
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "object" && error && "message" in error && typeof error.message === "string") return error.message;
+  return fallback;
 }
 
 export function ParticipationForm({ participation }: { participation?: PastParticipation }) {
@@ -131,6 +135,7 @@ export function ParticipationForm({ participation }: { participation?: PastParti
   const [status, setStatus] = useState(participation?.status ?? "draft");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [publishing, setPublishing] = useState(false);
   const isPublished = participation?.status === "published";
 
@@ -212,6 +217,7 @@ export function ParticipationForm({ participation }: { participation?: PastParti
       if (participation) {
         const { error } = await supabase.from("past_participation").update(data).eq("id", participation.id);
         if (error) throw error;
+        if (imageFile) await uploadContentImage("past_participation", participation.id, imageFile);
         setMessage("Saved.");
         router.refresh();
         return;
@@ -228,6 +234,7 @@ export function ParticipationForm({ participation }: { participation?: PastParti
         .select("id, slug, status")
         .single();
       if (error || !created) throw error ?? new Error("The Past Participation could not be created.");
+      if (imageFile) await uploadContentImage("past_participation", created.id, imageFile);
 
       router.replace(`/portal/participations/${created.slug}`);
     } catch (error) {
@@ -340,6 +347,7 @@ export function ParticipationForm({ participation }: { participation?: PastParti
         <p className="text-sm text-zinc-600">Use the published date label for a year-only date or a date range exactly as it should appear on the Profile.</p>
         <TextField label="Source URL" id="participation-source-url" type="url" value={fields.source_url} onChange={(value) => changeField("source_url", value)} optional />
       </fieldset>
+      <ContentImageUpload file={imageFile} onFileChange={setImageFile} disabled={saving || publishing} />
 
       {message ? <p role="alert" className="rounded bg-zinc-100 p-3 text-sm text-zinc-800">{message}</p> : null}
       <PublishRequirements requirements={publishRequirements} />
@@ -351,6 +359,7 @@ export function ParticipationForm({ participation }: { participation?: PastParti
           {publishing ? "Publishing..." : "Publish"}
         </button>
       </div>
+      {participation ? <DeleteContentButton itemType="past_participation" id={participation.id} returnTo="/portal/participations" /> : null}
       {!participation ? <p className="text-sm text-zinc-600">Save the draft before publishing it.</p> : null}
       </fieldset>
     </form>

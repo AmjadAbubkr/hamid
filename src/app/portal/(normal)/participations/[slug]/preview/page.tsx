@@ -21,7 +21,7 @@ export default async function ParticipationPreviewPage({ params }: { params: Pro
 
   const { data, error } = await supabase
     .from("past_participation")
-    .select("slug, status, title_ar, title_fr, body_ar, body_fr, venue_ar, venue_fr, institution_ar, institution_fr, role, role_other_ar, role_other_fr, source_url, event_date_label")
+    .select("slug, status, title_ar, title_fr, title_en, body_ar, body_fr, body_en, venue_ar, venue_fr, venue_en, institution_ar, institution_fr, institution_en, role, role_other_ar, role_other_fr, role_other_en, source_url, event_date_label, image_path")
     .eq("slug", slug)
     .eq("author_editor_id", editorId)
     .maybeSingle();

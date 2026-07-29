@@ -19,7 +19,7 @@ export default async function EditGalleryPhotoPage({ params }: { params: Promise
 
   const { data, error } = await supabase
     .from("gallery_photo")
-    .select("id, slug, status, storage_path, caption_ar, caption_fr, taken_date, photographer_credit_ar, photographer_credit_fr, category_ar, category_fr")
+    .select("id, slug, status, storage_path, caption_ar, caption_fr, caption_en, taken_date, photographer_credit_ar, photographer_credit_fr, photographer_credit_en, category_ar, category_fr, category_en")
     .eq("slug", slug)
     .eq("author_editor_id", editorId)
     .maybeSingle();

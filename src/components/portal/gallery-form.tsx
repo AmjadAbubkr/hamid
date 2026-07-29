@@ -4,6 +4,7 @@ import { useRef, useState, type DragEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { normalizeSlugInput } from "@/lib/content/slug";
 import { PublishRequirements } from "./publish-requirements";
+import { DeleteContentButton } from "./delete-content-button";
 import { usePortalLocale } from "./portal-locale-provider";
 
 export const GALLERY_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
@@ -298,6 +299,7 @@ export function GalleryForm({ photo }: { photo?: GalleryPhoto }) {
           </button>
         )}
       </div>
+      {photo ? <DeleteContentButton itemType="gallery_photo" id={photo.id} returnTo="/portal/gallery" /> : null}
       {!photo ? <p className="text-sm text-ink-700">Save the draft before publishing it.</p> : null}
     </form>
   );

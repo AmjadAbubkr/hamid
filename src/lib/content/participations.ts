@@ -65,10 +65,11 @@ export type PastParticipation = {
   roleOtherFr: string | null;
   roleOtherEn: string | null;
   sourceUrl: string | null;
+  imagePath: string | null;
 };
 
 const PARTICIPATION_FIELDS =
-  "slug,title_ar,title_fr,title_en,body_ar,body_fr,body_en,event_date,event_end_date,event_date_label,venue_ar,venue_fr,venue_en,institution_ar,institution_fr,institution_en,role,role_other_ar,role_other_fr,role_other_en,source_url";
+  "slug,title_ar,title_fr,title_en,body_ar,body_fr,body_en,event_date,event_end_date,event_date_label,venue_ar,venue_fr,venue_en,institution_ar,institution_fr,institution_en,role,role_other_ar,role_other_fr,role_other_en,source_url,image_path";
 
 type PastParticipationRow = {
   slug: string;
@@ -92,6 +93,7 @@ type PastParticipationRow = {
   role_other_fr: string | null;
   role_other_en: string | null;
   source_url: string | null;
+  image_path: string | null;
 };
 
 function toPastParticipation(row: PastParticipationRow): PastParticipation {
@@ -117,6 +119,7 @@ function toPastParticipation(row: PastParticipationRow): PastParticipation {
     roleOtherFr: row.role_other_fr,
     roleOtherEn: row.role_other_en,
     sourceUrl: row.source_url,
+    imagePath: row.image_path,
   };
 }
 
