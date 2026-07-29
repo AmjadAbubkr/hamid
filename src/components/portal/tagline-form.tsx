@@ -34,10 +34,10 @@ export function TaglineForm() {
   const [publishing, setPublishing] = useState(false);
   const canPublish = Boolean(tagline) && isFilled(taglineAr) && isFilled(taglineFr) && isFilled(taglineEn);
   const publishRequirements = [
-    !tagline ? "Wait for the Tagline to load." : "",
-    !isFilled(taglineAr) ? "Arabic Tagline" : "",
-    !isFilled(taglineFr) ? "French Tagline" : "",
-    !isFilled(taglineEn) ? "English Tagline" : "",
+    !tagline ? t("Wait for the Tagline to load.") : "",
+    !isFilled(taglineAr) ? t("Arabic Tagline") : "",
+    !isFilled(taglineFr) ? t("French Tagline") : "",
+    !isFilled(taglineEn) ? t("English Tagline") : "",
   ].filter(Boolean);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export function TaglineForm() {
       try {
         const response = await fetch("/api/portal/tagline", { cache: "no-store" });
         const result = await response.json() as { error?: string; tagline?: Tagline };
-        if (!response.ok || !result.tagline) throw new Error(result.error ?? "The Tagline could not be loaded.");
+        if (!response.ok || !result.tagline) throw new Error(result.error ?? t("The Tagline could not be loaded."));
         if (active) {
           setTagline(result.tagline);
           setTaglineAr(result.tagline.tagline_ar);
@@ -56,7 +56,7 @@ export function TaglineForm() {
         }
       } catch (error) {
         if (active) {
-          setMessage(messageFor(error, "The Tagline could not be loaded."));
+          setMessage(messageFor(error, t("The Tagline could not be loaded.")));
           setState("error");
         }
       }
@@ -83,7 +83,7 @@ export function TaglineForm() {
         body: JSON.stringify({ tagline_ar: taglineAr, tagline_fr: taglineFr, tagline_en: taglineEn, action }),
       });
       const result = await response.json() as { error?: string; tagline?: Tagline };
-      if (!response.ok || !result.tagline) throw new Error(result.error ?? "The Tagline could not be saved.");
+      if (!response.ok || !result.tagline) throw new Error(result.error ?? t("The Tagline could not be saved."));
 
       setTagline(result.tagline);
       setMessage(action === "publish"
@@ -91,21 +91,21 @@ export function TaglineForm() {
         : "Saved as a draft. Publish when all Locale sentences are ready.");
       router.refresh();
     } catch (error) {
-      setMessage(messageFor(error, "The Tagline could not be saved."));
+      setMessage(messageFor(error, t("The Tagline could not be saved.")));
     } finally {
       setSaving(false);
       setPublishing(false);
     }
   }
 
-  if (state === "loading") return <p className="text-ink-600">Loading the Tagline...</p>;
+  if (state === "loading") return <p className="text-ink-600">{t("Loading the Tagline...")}</p>;
   if (state === "error") return <p role="alert" className="rounded border border-line bg-surface-low p-3 text-ink">{message}</p>;
 
   return (
     <form className="flex flex-col gap-8" onSubmit={submit}>
       <section className="rounded border border-line border-t-2 border-t-gold-300 bg-surface p-5">
-        <h2 className="font-serif text-xl font-semibold text-ink">The Profile&apos;s one-line introduction</h2>
-        <p className="mt-2 text-sm leading-6 text-ink-700">This is the only Tagline. It is not a free-text Bio, and the About page assembles the rest from structured Content Items.</p>
+        <h2 className="font-serif text-xl font-semibold text-ink">{t("The Profile's one-line introduction")}</h2>
+        <p className="mt-2 text-sm leading-6 text-ink-700">{t("This is the only Tagline. It is not a free-text Bio, and the About page assembles the rest from structured Content Items.")}</p>
         <p className="mt-3 text-sm text-ink-700">{t("Status:")} {tagline ? t(tagline.status) : ""}</p>
       </section>
 
@@ -125,7 +125,7 @@ export function TaglineForm() {
           {publishing ? t("Publishing...") : t("Publish")}
         </button>
       </div>
-      <p className="text-sm text-ink-700">There is no New, list, or delete action: the Tagline is a single protected record.</p>
+      <p className="text-sm text-ink-700">{t("There is no New, list, or delete action: the Tagline is a single protected record.")}</p>
     </form>
   );
 }
@@ -141,6 +141,7 @@ function LocaleField({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const { t } = usePortalLocale();
   const id = `tagline-${locale.toLowerCase()}`;
   return (
     <section dir={direction} className="rounded border border-line border-t-2 border-t-gold-300 bg-surface p-5">
@@ -154,7 +155,7 @@ function LocaleField({
           maxLength={240}
         />
       </label>
-      <p className="mt-2 text-sm text-ink-700">Keep it concise: one sentence that introduces Hamid in this Locale.</p>
+      <p className="mt-2 text-sm text-ink-700">{t("Keep it concise: one sentence that introduces Hamid in this Locale.")}</p>
     </section>
   );
 }

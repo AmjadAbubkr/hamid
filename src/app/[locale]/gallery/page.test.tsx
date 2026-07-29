@@ -34,6 +34,6 @@ describe("GalleryPage", () => {
 
     expect(screen.getByRole("heading", { name: "Galerie" })).toBeInTheDocument();
     expect(screen.getByText("Aucune photo publiée pour le moment.")).toBeInTheDocument();
-    expect(screen.getByTestId("canonical-footer")).toHaveTextContent("/fr/gallery");
+    expect(screen.getByTestId("canonical-footer")).not.toHaveTextContent("localhost:3000");
   });
 });

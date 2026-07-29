@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { ParticipationForm, type PastParticipation } from "@/components/portal/participation-form";
 import { PortalFrame } from "@/components/portal/portal-frame";
+import { PortalText } from "@/components/portal/portal-locale-provider";
 import { createSupabaseServerClient, getCurrentEditorId } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -29,8 +30,8 @@ export default async function EditParticipationPage({ params }: { params: Promis
   return (
     <PortalFrame title="Edit Past Participation">
       <div className="flex flex-wrap gap-4 text-sm font-semibold">
-        <Link href="/portal/participations" className="text-zinc-950 underline underline-offset-4">Back to Past Participations</Link>
-        <Link href={`/portal/participations/${data.slug}/preview`} className="text-zinc-950 underline underline-offset-4">Preview</Link>
+        <Link href="/portal/participations" className="text-zinc-950 underline underline-offset-4"><PortalText>Back to Past Participations</PortalText></Link>
+        <Link href={`/portal/participations/${data.slug}/preview`} className="text-zinc-950 underline underline-offset-4"><PortalText>Preview</PortalText></Link>
       </div>
       <ParticipationForm participation={data as PastParticipation} />
     </PortalFrame>

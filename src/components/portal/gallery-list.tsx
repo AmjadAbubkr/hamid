@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePortalLocale } from "./portal-locale-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import type { GalleryPhoto } from "./gallery-form";
 
 type GalleryListItem = Pick<GalleryPhoto, "id" | "slug" | "status" | "caption_ar" | "caption_fr" | "taken_date">;
 
 export function GalleryList() {
+  const { t } = usePortalLocale();
   const [items, setItems] = useState<GalleryListItem[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
 
@@ -46,8 +48,8 @@ export function GalleryList() {
       {items.map((item) => (
         <li key={item.id} className="flex flex-col gap-2 rounded border border-line border-t-2 border-t-gold-300 bg-surface p-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex flex-col gap-1">
-            <p className="font-semibold text-ink">{item.caption_fr || item.caption_ar || "Untitled Gallery Photo"}</p>
-            <p className="text-sm text-ink-700">{item.taken_date || "Date not set"} · {item.status}</p>
+            <p className="font-semibold text-ink">{item.caption_fr || item.caption_ar || t("Untitled Gallery Photo")}</p>
+            <p className="text-sm text-ink-700">{item.taken_date || t("Date not set")} · {item.status}</p>
           </div>
           <Link href={`/portal/gallery/${item.slug}`} className="text-sm font-semibold text-ink underline decoration-gold underline-offset-4">Edit</Link>
         </li>

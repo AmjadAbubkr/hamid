@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePortalLocale } from "./portal-locale-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import type { EducationEntry } from "./education-form";
 
 type EducationListItem = Pick<EducationEntry, "id" | "slug" | "status" | "degree_ar" | "degree_fr" | "institution_ar" | "institution_fr" | "start_date" | "end_date">;
 
 export function EducationList() {
+  const { t } = usePortalLocale();
   const [items, setItems] = useState<EducationListItem[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
 
@@ -55,8 +57,8 @@ export function EducationList() {
       {items.map((item) => (
         <li key={item.id} className="flex flex-col gap-2 rounded-lg border border-zinc-300 bg-white p-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex flex-col gap-1">
-            <p className="font-semibold text-zinc-950">{item.degree_fr || item.degree_ar || "Untitled Education Entry"}</p>
-            <p className="text-sm text-zinc-700">{item.institution_fr || item.institution_ar || "Institution not set"}</p>
+            <p className="font-semibold text-zinc-950">{item.degree_fr || item.degree_ar || t("Untitled Education Entry")}</p>
+            <p className="text-sm text-zinc-700">{item.institution_fr || item.institution_ar || t("Institution not set")}</p>
             <p className="text-sm text-zinc-600">{educationDates(item)}</p>
             <p className="text-sm font-medium capitalize text-zinc-700">{item.status}</p>
           </div>
@@ -75,6 +77,6 @@ export function EducationList() {
 }
 
 function educationDates(item: EducationListItem): string {
-  if (!item.start_date || !item.end_date) return "Dates not set";
+  if (!item.start_date || !item.end_date) return t("Dates not set");
   return `${item.start_date} - ${item.end_date}`;
 }

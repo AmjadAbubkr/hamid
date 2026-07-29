@@ -14,15 +14,14 @@ afterEach(() => {
 });
 
 describe("CanonicalFooter", () => {
-  it("server-renders the complete canonical URL for the supplied public route", () => {
+  it("does not expose the local or canonical URL in the visible footer", () => {
     process.env.NEXT_PUBLIC_SITE_URL = "https://hamid.example/";
 
     render(
       <CanonicalFooter pathname="/fr/career/inspecteur-technique" locale="fr" />,
     );
 
-    expect(screen.getByTestId("canonical-footer")).toHaveTextContent(
-      "https://hamid.example/fr/career/inspecteur-technique",
-    );
+    expect(screen.getByTestId("canonical-footer")).not.toHaveTextContent("localhost:3000");
+    expect(screen.getByTestId("canonical-footer")).not.toHaveTextContent("hamid.example");
   });
 });

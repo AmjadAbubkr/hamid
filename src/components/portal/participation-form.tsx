@@ -12,6 +12,7 @@ import { normalizeSlugInput } from "@/lib/content/slug";
 import { PublishRequirements } from "./publish-requirements";
 import { DeleteContentButton } from "./delete-content-button";
 import { ContentImageUpload, uploadContentImage } from "./content-image-upload";
+import { usePortalLocale } from "./portal-locale-provider";
 
 export type PastParticipation = {
   id: string;
@@ -131,6 +132,7 @@ function messageFor(error: unknown, fallback: string) {
 
 export function ParticipationForm({ participation }: { participation?: PastParticipation }) {
   const router = useRouter();
+  const { t } = usePortalLocale();
   const [fields, setFields] = useState(() => fieldsFrom(participation));
   const [status, setStatus] = useState(participation?.status ?? "draft");
   const [message, setMessage] = useState("");
@@ -287,7 +289,7 @@ export function ParticipationForm({ participation }: { participation?: PastParti
             required
           />
         </label>
-        <p className="text-sm text-zinc-600">Status: {status}</p>
+        <p className="text-sm text-zinc-600">{t("Status:")} {t(status)}</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -319,7 +321,7 @@ export function ParticipationForm({ participation }: { participation?: PastParti
       </div>
 
       <fieldset className="flex flex-col gap-4 rounded-lg border border-zinc-300 bg-white p-4">
-        <legend className="px-1 text-base font-semibold text-zinc-950">Participation details</legend>
+        <legend className="px-1 text-base font-semibold text-zinc-950">{t("Participation details")}</legend>
         <label className="flex flex-col gap-1 text-sm font-medium text-zinc-800" htmlFor="participation-role">
           Role
           <select
@@ -353,14 +355,14 @@ export function ParticipationForm({ participation }: { participation?: PastParti
       <PublishRequirements requirements={publishRequirements} />
       <div className="flex flex-wrap gap-3">
         <button type="submit" disabled={saving || publishing} className="rounded bg-zinc-950 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">
-          {saving ? "Saving..." : "Save as draft"}
+          {saving ? t("Saving...") : t("Save as draft")}
         </button>
         <button type="button" disabled={!canPublish || saving || publishing} onClick={publish} className="rounded border border-zinc-950 px-4 py-2 font-semibold text-zinc-950 disabled:cursor-not-allowed disabled:opacity-60">
-          {publishing ? "Publishing..." : "Publish"}
+          {publishing ? t("Publishing...") : t("Publish")}
         </button>
       </div>
       {participation ? <DeleteContentButton itemType="past_participation" id={participation.id} returnTo="/portal/participations" /> : null}
-      {!participation ? <p className="text-sm text-zinc-600">Save the draft before publishing it.</p> : null}
+      {!participation ? <p className="text-sm text-zinc-600">{t("Save the draft before publishing it.")}</p> : null}
       </fieldset>
     </form>
   );

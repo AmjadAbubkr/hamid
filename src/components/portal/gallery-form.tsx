@@ -225,8 +225,8 @@ export function GalleryForm({ photo }: { photo?: GalleryPhoto }) {
 
       <section className="flex flex-col gap-4 rounded border border-line border-t-2 border-t-gold-300 bg-surface p-5" aria-labelledby="gallery-image-title">
         <div>
-          <h2 id="gallery-image-title" className="font-serif text-xl font-semibold text-ink">Gallery image</h2>
-          <p className="mt-1 text-sm text-ink-700">JPEG, PNG, or WebP, up to 8 MB. Draft images remain private until published.</p>
+          <h2 id="gallery-image-title" className="font-serif text-xl font-semibold text-ink">{t("Gallery image")}</h2>
+          <p className="mt-1 text-sm text-ink-700">{t("JPEG, PNG, or WebP, up to 8 MB. Draft images remain private until published.")}</p>
         </div>
         <div
           className="flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded border border-dashed border-line-soft bg-surface-low p-4 text-center text-ink"
@@ -238,15 +238,15 @@ export function GalleryForm({ photo }: { photo?: GalleryPhoto }) {
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") fileInput.current?.click();
           }}
-          aria-label="Gallery image upload area"
+          aria-label={t("Gallery image upload area")}
         >
-          <span className="font-semibold">Drop an image here or choose a file</span>
-          <span className="text-sm text-ink-700">{image ? image.name : photo?.storage_path ? "Current image is kept unless you choose a replacement." : "No image selected."}</span>
+          <span className="font-semibold">{t("Drop an image here or choose a file")}</span>
+          <span className="text-sm text-ink-700">{image ? image.name : photo?.storage_path ? t("Current image is kept unless you choose a replacement.") : t("No image selected.")}</span>
         </div>
         <input
           ref={fileInput}
           id="gallery-image"
-          aria-label="Gallery image file"
+          aria-label={t("Gallery image file")}
           className="sr-only"
           type="file"
           accept="image/jpeg,image/png,image/webp"
@@ -280,7 +280,7 @@ export function GalleryForm({ photo }: { photo?: GalleryPhoto }) {
       </div>
 
       <section className="rounded border border-line border-t-2 border-t-gold-300 bg-surface p-5">
-        <TextField label="Date taken" id="gallery-taken-date" type="date" value={fields.taken_date} onChange={(value) => changeField("taken_date", value)} />
+        <TextField label={t("Date taken")} id="gallery-taken-date" type="date" value={fields.taken_date} onChange={(value) => changeField("taken_date", value)} />
       </section>
 
       {message ? <p role="alert" className="rounded border border-line bg-surface-low p-3 text-sm text-ink">{message}</p> : null}
@@ -295,12 +295,12 @@ export function GalleryForm({ photo }: { photo?: GalleryPhoto }) {
           </button>
         ) : (
           <button type="button" disabled={saving || publishing || unpublishing} onClick={() => void save("unpublish")} className="rounded border border-gold px-4 py-2 font-semibold text-gold disabled:cursor-not-allowed disabled:opacity-60">
-            {unpublishing ? "Moving to draft..." : "Move to draft"}
+            {unpublishing ? t("Moving to draft...") : t("Move to draft")}
           </button>
         )}
       </div>
       {photo ? <DeleteContentButton itemType="gallery_photo" id={photo.id} returnTo="/portal/gallery" /> : null}
-      {!photo ? <p className="text-sm text-ink-700">Save the draft before publishing it.</p> : null}
+      {!photo ? <p className="text-sm text-ink-700">{t("Save the draft before publishing it.")}</p> : null}
     </form>
   );
 }

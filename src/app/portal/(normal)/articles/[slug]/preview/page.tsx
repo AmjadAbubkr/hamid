@@ -3,6 +3,7 @@ import { unstable_noStore } from "next/cache";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { PortalFrame } from "@/components/portal/portal-frame";
+import { PortalText } from "@/components/portal/portal-locale-provider";
 import { sanitizeArticleHtml } from "@/lib/articles/sanitize-article-html";
 import { safeHttpUrl } from "@/lib/safe-http-url";
 import { createSupabaseServerClient, getCurrentEditorId } from "@/lib/supabase/server";
@@ -35,7 +36,7 @@ export default async function ArticlePreviewPage({ params }: { params: Promise<{
   return (
     <PortalFrame title="Article preview">
       <div className="flex flex-wrap gap-4 text-sm font-semibold">
-        <Link href={`/portal/articles/${data.slug}`} className="text-zinc-950 underline underline-offset-4">Back to edit</Link>
+        <Link href={`/portal/articles/${data.slug}`} className="text-zinc-950 underline underline-offset-4"><PortalText>Back to edit</PortalText></Link>
         <p className="text-zinc-700">{data.status === "draft" ? "Draft preview - not visible on the Profile." : "Public Article preview."}</p>
       </div>
       <section className="flex flex-col gap-8 rounded-lg border border-zinc-300 bg-white p-5">
