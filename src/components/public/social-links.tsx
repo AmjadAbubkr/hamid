@@ -5,6 +5,7 @@ export const SOCIAL_LINKS = {
   facebook: "https://www.facebook.com/hamid.azaz/",
   instagram: "https://www.instagram.com/hamid_azaz_officiel?utm_source=qr&igsh=ZGExNmxtYnN2Zm1l",
   x: "https://x.com/HamidAzaz1",
+  email: "mailto:hamidazaz785@gmail.com",
 } as const;
 
 type SocialLinksProps = {
@@ -58,6 +59,11 @@ const SOCIAL_ARIA: Record<keyof typeof SOCIAL_LINKS, Record<LocaleCode, string>>
     fr: "Hamid Mahamat Azaz sur X",
     en: "Hamid Mahamat Azaz on X",
   },
+  email: {
+    ar: "\u0645\u0631\u0627\u0633\u0644\u0629 \u062d\u0645\u064a\u062f \u0645\u062d\u0645\u062f \u0639\u0632\u0627\u0632 \u0639\u0628\u0631 \u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a",
+    fr: "Envoyer un e-mail à Hamid Mahamat Azaz",
+    en: "Email Hamid Mahamat Azaz",
+  },
 };
 
 function LinkedinIcon({ className }: { className: string }) {
@@ -104,6 +110,15 @@ function XIcon({ className }: { className: string }) {
   );
 }
 
+function EmailIcon({ className }: { className: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
+      <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="2" />
+      <path d="m4 7 8 6 8-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function SocialLinks({ locale, variant }: SocialLinksProps) {
   const styles = VARIANTS[variant];
 
@@ -139,6 +154,11 @@ export function SocialLinks({ locale, variant }: SocialLinksProps) {
       <li>
         <a href={SOCIAL_LINKS.x} target="_blank" rel="noopener noreferrer" aria-label={textFor(locale, SOCIAL_ARIA.x)} className={styles.itemClassName}>
           <XIcon className={styles.iconClassName} />
+        </a>
+      </li>
+      <li>
+        <a href={SOCIAL_LINKS.email} aria-label={textFor(locale, SOCIAL_ARIA.email)} className={styles.itemClassName}>
+          <EmailIcon className={styles.iconClassName} />
         </a>
       </li>
     </ul>
