@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePortalLocale } from "./portal-locale-provider";
 import { getParticipationRoleEditorLabel } from "@/lib/content/participation-roles";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import type { UpcomingEvent } from "./event-form";
@@ -9,6 +10,7 @@ import type { UpcomingEvent } from "./event-form";
 type EventListItem = Pick<UpcomingEvent, "id" | "slug" | "status" | "title_ar" | "title_fr" | "institution_ar" | "institution_fr" | "event_date" | "role">;
 
 export function EventList() {
+  const { t } = usePortalLocale();
   const [items, setItems] = useState<EventListItem[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
 
@@ -56,10 +58,10 @@ export function EventList() {
       {items.map((item) => (
         <li key={item.id} className="flex flex-col gap-2 rounded-lg border border-zinc-300 bg-white p-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex flex-col gap-1">
-            <p className="font-semibold text-zinc-950">{item.title_fr || item.title_ar || "Untitled Upcoming Event"}</p>
-            <p className="text-sm text-zinc-700">{item.institution_fr || item.institution_ar || "Institution not set"}</p>
-            <p className="text-sm text-zinc-600">{item.event_date || "Event date not set"}</p>
-            <p className="text-sm font-medium text-zinc-700">{item.role ? getParticipationRoleEditorLabel(item.role) : "Role not set"} - {item.status}</p>
+            <p className="font-semibold text-zinc-950">{item.title_fr || item.title_ar || t("Untitled Upcoming Event")}</p>
+            <p className="text-sm text-zinc-700">{item.institution_fr || item.institution_ar || t("Institution not set")}</p>
+            <p className="text-sm text-zinc-600">{item.event_date || t("Event date not set")}</p>
+            <p className="text-sm font-medium text-zinc-700">{item.role ? getParticipationRoleEditorLabel(item.role) : t("Role not set")} - {item.status}</p>
           </div>
           <div className="flex flex-wrap gap-3 text-sm font-semibold">
             <Link href={`/portal/events/${item.slug}`} className="text-zinc-950 underline underline-offset-4">Edit</Link>

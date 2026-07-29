@@ -33,7 +33,7 @@ async function createEditor(db: PGlite) {
     INSERT INTO auth.users DEFAULT VALUES RETURNING id;
   `);
   const editor = await db.query<{ id: string }>(`
-    INSERT INTO editors (display_name, auth_user_id) VALUES ('Test Editor', $1) RETURNING id;
+    SELECT id FROM editors WHERE auth_user_id = $1;
   `, [authUser.rows[0].id]);
   return { editorId: editor.rows[0].id, authUserId: authUser.rows[0].id };
 }
@@ -110,7 +110,11 @@ describe("Content Item schema (ticket 02)", () => {
     db = new PGlite();
     await db.exec(`
       CREATE SCHEMA auth;
-      CREATE TABLE auth.users (id uuid PRIMARY KEY DEFAULT gen_random_uuid());
+      CREATE TABLE auth.users (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        email text,
+        raw_user_meta_data jsonb NOT NULL DEFAULT '{}'::jsonb
+      );
       CREATE FUNCTION auth.uid()
       RETURNS uuid
       LANGUAGE sql
@@ -141,6 +145,19 @@ describe("Content Item schema (ticket 02)", () => {
       expect(cols.auth_user_id).toBe("uuid");
       expect(cols.display_name).toBe("text");
       expect(cols.created_at).toBe("timestamp with time zone");
+    });
+
+    it("creates a Portal Editor for every new Auth user", async () => {
+      const authUser = await db.query<{ id: string }>(`
+        INSERT INTO auth.users (email, raw_user_meta_data)
+        VALUES ('second-editor@example.com', '{"full_name":"Second Editor"}')
+        RETURNING id;
+      `);
+      const editor = await db.query<{ display_name: string }>(`
+        SELECT display_name FROM editors WHERE auth_user_id = $1;
+      `, [authUser.rows[0].id]);
+
+      expect(editor.rows).toEqual([{ display_name: "Second Editor" }]);
     });
   });
 

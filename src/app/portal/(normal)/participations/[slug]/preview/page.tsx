@@ -3,6 +3,7 @@ import { unstable_noStore } from "next/cache";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { PortalFrame } from "@/components/portal/portal-frame";
+import { PortalText } from "@/components/portal/portal-locale-provider";
 import { createSupabaseServerClient, getCurrentEditorId } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -31,8 +32,8 @@ export default async function ParticipationPreviewPage({ params }: { params: Pro
   return (
     <PortalFrame title="Past Participation preview">
       <div className="flex flex-wrap gap-4 text-sm font-semibold">
-        <Link href={`/portal/participations/${data.slug}`} className="text-zinc-950 underline underline-offset-4">Back to edit</Link>
-        <p className="text-zinc-700">Draft preview - not visible on the Profile.</p>
+        <Link href={`/portal/participations/${data.slug}`} className="text-zinc-950 underline underline-offset-4"><PortalText>Back to edit</PortalText></Link>
+        <p className="text-zinc-700"><PortalText>Draft preview - not visible on the Profile.</PortalText></p>
       </div>
       <section className="flex flex-col gap-6 rounded-lg border border-zinc-300 bg-white p-5">
         <p className="font-medium capitalize text-zinc-700">{data.status}</p>

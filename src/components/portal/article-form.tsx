@@ -179,7 +179,7 @@ export function ArticleForm({ article }: { article?: Article }) {
     <form className="flex flex-col gap-6" onSubmit={submit}>
       {isPublished ? (
         <p className="rounded bg-zinc-100 p-3 text-sm text-zinc-800">
-          This Article is public. Save changes to update the published version.
+          {t("This Article is public. Save changes to update the published version.")}
         </p>
       ) : null}
       <div className="flex flex-col gap-2 rounded-lg border border-zinc-300 bg-white p-4">
@@ -199,7 +199,7 @@ export function ArticleForm({ article }: { article?: Article }) {
       </div>
 
       <p className="rounded border border-zinc-300 bg-white p-4 text-sm text-zinc-700">
-        What kind of piece is this? Op-ed, essay, policy brief, published article.
+        {t("What kind of piece is this? Op-ed, essay, policy brief, published article.")}
       </p>
       {hasInstitutionalTitle ? (
         <p role="status" className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
@@ -241,10 +241,10 @@ export function ArticleForm({ article }: { article?: Article }) {
       </div>
 
       <fieldset className="flex flex-col gap-4 rounded-lg border border-zinc-300 bg-white p-4">
-        <legend className="px-1 text-base font-semibold text-zinc-950">Original publication details</legend>
-        <TextField label="Original publication date" id="article-published-date" type="date" value={fields.published_date} onChange={(value) => changeField("published_date", value)} />
-        <TextField label="Original publication URL" id="article-published-in-url" type="url" optional value={fields.published_in_url} onChange={(value) => changeField("published_in_url", value)} />
-        <p className="text-sm text-zinc-600">If the piece first appeared elsewhere, provide both publication names. The URL is optional.</p>
+        <legend className="px-1 text-base font-semibold text-zinc-950">{t("Original publication details")}</legend>
+        <TextField label={t("Original publication date")} id="article-published-date" type="date" value={fields.published_date} onChange={(value) => changeField("published_date", value)} />
+        <TextField label={t("Original publication URL")} id="article-published-in-url" type="url" optional value={fields.published_in_url} onChange={(value) => changeField("published_in_url", value)} />
+        <p className="text-sm text-zinc-600">{t("If the piece first appeared elsewhere, provide both publication names. The URL is optional.")}</p>
       </fieldset>
 
       {message ? <p role="alert" className="rounded bg-zinc-100 p-3 text-sm text-zinc-800">{message}</p> : null}
@@ -269,7 +269,7 @@ export function ArticleForm({ article }: { article?: Article }) {
       </div>
       {article ? <DeleteContentButton itemType="article" id={article.id} returnTo="/portal/articles" /> : null}
       {shareMessage ? <p role="status" className="text-sm text-zinc-700">{shareMessage}</p> : null}
-      {!article ? <p className="text-sm text-zinc-600">Save the draft before publishing it.</p> : null}
+      {!article ? <p className="text-sm text-zinc-600">{t("Save the draft before publishing it.")}</p> : null}
     </form>
   );
 }

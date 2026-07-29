@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { ArticleForm, type Article } from "@/components/portal/article-form";
 import { PortalFrame } from "@/components/portal/portal-frame";
+import { PortalText } from "@/components/portal/portal-locale-provider";
 import { createSupabaseServerClient, getCurrentEditorId } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -29,8 +30,8 @@ export default async function EditArticlePage({ params }: { params: Promise<{ sl
   return (
     <PortalFrame title="Edit Article">
       <div className="flex flex-wrap gap-4 text-sm font-semibold">
-        <Link href="/portal/articles" className="text-zinc-950 underline underline-offset-4">Back to Articles</Link>
-        <Link href={`/portal/articles/${data.slug}/preview`} className="text-zinc-950 underline underline-offset-4">Preview</Link>
+        <Link href="/portal/articles" className="text-zinc-950 underline underline-offset-4"><PortalText>Back to Articles</PortalText></Link>
+        <Link href={`/portal/articles/${data.slug}/preview`} className="text-zinc-950 underline underline-offset-4"><PortalText>Preview</PortalText></Link>
       </div>
       <ArticleForm article={data as Article} />
     </PortalFrame>

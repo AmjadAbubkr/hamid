@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePortalLocale } from "./portal-locale-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import type { PastParticipation } from "./participation-form";
 
 type ParticipationListItem = Pick<PastParticipation, "id" | "slug" | "status" | "title_ar" | "title_fr" | "institution_ar" | "institution_fr" | "role" | "event_date_label">;
 
 export function ParticipationList() {
+  const { t } = usePortalLocale();
   const [items, setItems] = useState<ParticipationListItem[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
 
@@ -55,10 +57,10 @@ export function ParticipationList() {
       {items.map((item) => (
         <li key={item.id} className="flex flex-col gap-2 rounded-lg border border-zinc-300 bg-white p-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex flex-col gap-1">
-            <p className="font-semibold text-zinc-950">{item.title_fr || item.title_ar || "Untitled Past Participation"}</p>
-            <p className="text-sm text-zinc-700">{item.institution_fr || item.institution_ar || "Institution not set"}</p>
-            <p className="text-sm text-zinc-600">{item.event_date_label || "Event date not set"}</p>
-            <p className="text-sm font-medium text-zinc-700">{item.role || "Role not set"} - {item.status}</p>
+            <p className="font-semibold text-zinc-950">{item.title_fr || item.title_ar || t("Untitled Past Participation")}</p>
+            <p className="text-sm text-zinc-700">{item.institution_fr || item.institution_ar || t("Institution not set")}</p>
+            <p className="text-sm text-zinc-600">{item.event_date_label || t("Event date not set")}</p>
+            <p className="text-sm font-medium text-zinc-700">{item.role || t("Role not set")} - {item.status}</p>
           </div>
           <div className="flex flex-wrap gap-3 text-sm font-semibold">
             <Link href={`/portal/participations/${item.slug}`} className="text-zinc-950 underline underline-offset-4">Edit</Link>

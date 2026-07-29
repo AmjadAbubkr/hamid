@@ -105,7 +105,7 @@ describe("About page", () => {
     expect(screen.getByRole("heading", { name: "Fonction précédente", level: 3 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Diplôme", level: 3 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Participation", level: 3 })).toBeInTheDocument();
-    expect(screen.getByTestId("canonical-footer")).toHaveTextContent("/fr/about");
+    expect(screen.getByTestId("canonical-footer")).not.toHaveTextContent("localhost:3000");
   });
 
   it("publishes correct per-Locale alternate links for the About URL", async () => {

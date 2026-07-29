@@ -12,6 +12,7 @@ import { normalizeSlugInput } from "@/lib/content/slug";
 import { PublishRequirements } from "./publish-requirements";
 import { DeleteContentButton } from "./delete-content-button";
 import { ContentImageUpload, uploadContentImage } from "./content-image-upload";
+import { usePortalLocale } from "./portal-locale-provider";
 
 export type UpcomingEvent = {
   id: string;
@@ -127,6 +128,7 @@ function messageFor(error: unknown, fallback: string) {
 
 export function EventForm({ event }: { event?: UpcomingEvent }) {
   const router = useRouter();
+  const { t } = usePortalLocale();
   const [fields, setFields] = useState(() => fieldsFrom(event));
   const [status, setStatus] = useState(event?.status ?? "draft");
   const [message, setMessage] = useState("");
@@ -270,7 +272,7 @@ export function EventForm({ event }: { event?: UpcomingEvent }) {
             required
           />
         </label>
-        <p className="text-sm text-zinc-600">Status: {status}</p>
+        <p className="text-sm text-zinc-600">{t("Status:")} {t(status)}</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -302,7 +304,7 @@ export function EventForm({ event }: { event?: UpcomingEvent }) {
       </div>
 
       <fieldset className="flex flex-col gap-4 rounded-lg border border-zinc-300 bg-white p-4">
-        <legend className="px-1 text-base font-semibold text-zinc-950">Event details</legend>
+        <legend className="px-1 text-base font-semibold text-zinc-950">{t("Event details")}</legend>
         <TextField label="Event date" id="event-date" type="date" value={fields.event_date} onChange={(value) => changeField("event_date", value)} />
         <label className="flex flex-col gap-1 text-sm font-medium text-zinc-800" htmlFor="event-role">
           Role
@@ -331,16 +333,16 @@ export function EventForm({ event }: { event?: UpcomingEvent }) {
       <PublishRequirements requirements={publishRequirements} />
       <div className="flex flex-wrap gap-3">
         <button type="submit" disabled={saving || publishing} className="rounded bg-zinc-950 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">
-          {saving ? "Saving..." : isPublished ? "Save changes" : "Save as draft"}
+          {saving ? t("Saving...") : isPublished ? t("Save changes") : t("Save as draft")}
         </button>
         {!isPublished ? (
           <button type="button" disabled={!canPublish || saving || publishing} onClick={publish} className="rounded border border-zinc-950 px-4 py-2 font-semibold text-zinc-950 disabled:cursor-not-allowed disabled:opacity-60">
-            {publishing ? "Publishing..." : "Publish"}
+            {publishing ? t("Publishing...") : t("Publish")}
           </button>
         ) : null}
       </div>
       {event ? <DeleteContentButton itemType="upcoming_event" id={event.id} returnTo="/portal/events" /> : null}
-      {!event ? <p className="text-sm text-zinc-600">Save the draft before publishing it.</p> : null}
+      {!event ? <p className="text-sm text-zinc-600">{t("Save the draft before publishing it.")}</p> : null}
     </form>
   );
 }

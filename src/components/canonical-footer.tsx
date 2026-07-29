@@ -6,21 +6,8 @@ type CanonicalFooterProps = {
   locale: LocaleCode;
 };
 
-function getSiteOrigin() {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  return URL.canParse(siteUrl) ? new URL(siteUrl).origin : "http://localhost:3000";
-}
-
-/*
-  CanonicalFooter — a quiet institutional footer that anchors the page with a
-  hairline divider, the canonical URL of the current page (kept for SEO and so
-  the canonical-footer test keeps passing), and a small mentions line. Lifts
-  the original dev-looking <code> block into something that reads as the
-  bottom of a foreign-ministry page.
-*/
+/* CanonicalFooter — a quiet institutional footer with a small official-document line. */
 export function CanonicalFooter({ pathname, locale }: CanonicalFooterProps) {
-  const origin = getSiteOrigin();
-  const canonical = new URL(pathname, origin).toString();
   const roleLine = textFor(locale, {
     ar: "دبلوماسي وسياسي تشادي — الملف الشخصي الرسمي",
     fr: "Diplomate et homme politique tchadien — Profil public officiel",
@@ -67,7 +54,6 @@ export function CanonicalFooter({ pathname, locale }: CanonicalFooterProps) {
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gold">
             {officialDocLine}
           </p>
-          <p className="font-mono text-xs text-ink-600 break-all">{canonical}</p>
         </div>
       </div>
     </footer>
