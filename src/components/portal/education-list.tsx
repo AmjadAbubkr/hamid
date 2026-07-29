@@ -59,7 +59,7 @@ export function EducationList() {
           <div className="flex flex-col gap-1">
             <p className="font-semibold text-zinc-950">{item.degree_fr || item.degree_ar || t("Untitled Education Entry")}</p>
             <p className="text-sm text-zinc-700">{item.institution_fr || item.institution_ar || t("Institution not set")}</p>
-            <p className="text-sm text-zinc-600">{educationDates(item)}</p>
+            <p className="text-sm text-zinc-600">{educationDates(item, t)}</p>
             <p className="text-sm font-medium capitalize text-zinc-700">{item.status}</p>
           </div>
           <div className="flex flex-wrap gap-3 text-sm font-semibold">
@@ -76,7 +76,7 @@ export function EducationList() {
   );
 }
 
-function educationDates(item: EducationListItem): string {
+function educationDates(item: EducationListItem, t: (english: string) => string): string {
   if (!item.start_date || !item.end_date) return t("Dates not set");
   return `${item.start_date} - ${item.end_date}`;
 }
