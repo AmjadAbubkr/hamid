@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { usePortalLocale } from "./portal-locale-provider";
@@ -111,7 +112,7 @@ export function EmailPasswordLoginControls({
       <button type="submit" disabled={action === "working"} className="rounded border border-ink px-4 py-3 text-base font-semibold text-ink transition-transform active:scale-[0.96] disabled:opacity-60">
         {action === "working" ? t("Signing in…") : t("Sign in with email and password")}
       </button>
-      <a href="/portal/password-reset" className="text-sm font-semibold text-gold underline underline-offset-4">{t("Forgot password?")}</a>
+      <Link href="/portal/password-reset" className="text-sm font-semibold text-gold underline underline-offset-4">{t("Forgot password?")}</Link>
       {action === "error" ? <p role="alert" className="text-sm text-red-700">{message}</p> : null}
     </form>
   );

@@ -5,11 +5,10 @@ import { LOCALE_META, type LocaleCode } from "@/lib/i18n/locales";
 
 type PortalLocaleContextValue = {
   locale: LocaleCode;
-  t: (english: string) => string;
+  t: (key: string) => string;
 };
 
-const PORTAL_TRANSLATIONS: Record<Exclude<LocaleCode, "en">, Record<string, string>> = {
-  ar: {
+const AR_PORTAL_TRANSLATIONS = {
     "This Article is public. Save changes to update the published version.": "هذا المقال منشور. احفظ التغييرات لتحديث النسخة المنشورة.", "What kind of piece is this? Op-ed, essay, policy brief, published article.": "ما نوع هذا النص؟ مقال رأي أو دراسة أو موجز سياسات أو مقال منشور.", "Original publication date": "تاريخ النشر الأصلي", "Original publication URL": "رابط النشر الأصلي", "If the piece first appeared elsewhere, provide both publication names. The URL is optional.": "إذا ظهر النص أولًا في مكان آخر، أدخل أسماء النشر باللغات. الرابط اختياري.", "Gallery image": "صورة المعرض", "JPEG, PNG, or WebP, up to 8 MB. Draft images remain private until published.": "JPEG أو PNG أو WebP حتى 8 ميغابايت. تبقى صور المسودة خاصة حتى النشر.", "Drop an image here or choose a file": "أفلت صورة هنا أو اختر ملفًا", "Current image is kept unless you choose a replacement.": "تُحفظ الصورة الحالية ما لم تختر بديلًا.", "No image selected.": "لم تُحدّد صورة.", "Gallery image upload area": "منطقة رفع صورة المعرض", "Gallery image file": "ملف صورة المعرض", "Date taken": "تاريخ الالتقاط", "Moving to draft...": "جارٍ النقل إلى المسودة...", "Move to draft": "نقل إلى المسودة",
     "Loading Upcoming Events...": "جارٍ تحميل الفعاليات القادمة...", "Upcoming Events could not be loaded.": "تعذّر تحميل الفعاليات القادمة.", "No Upcoming Events yet.": "لا توجد فعاليات قادمة بعد.", "Untitled Upcoming Event": "فعالية قادمة بلا عنوان", "Institution not set": "لم تُحدّد المؤسسة", "Event date not set": "لم يُحدّد تاريخ الفعالية", "Role not set": "لم يُحدّد الدور",
     "Loading Education Entries...": "جارٍ تحميل المؤهلات التعليمية...", "Education Entries could not be loaded.": "تعذّر تحميل المؤهلات التعليمية.", "No Education Entries yet.": "لا توجد مؤهلات تعليمية بعد.", "Untitled Education Entry": "مؤهل تعليمي بلا عنوان", "Dates not set": "لم تُحدّد التواريخ",
@@ -48,8 +47,11 @@ const PORTAL_TRANSLATIONS: Record<Exclude<LocaleCode, "en">, Record<string, stri
     "Sign in with passkey": "تسجيل الدخول بمفتاح المرور", "Waiting for passkey…": "بانتظار مفتاح المرور…", "Enroll this passkey": "سجّل مفتاح المرور هذا",
     "Recovery code": "رمز الاستعادة", "Continue to passkey re-enrollment": "المتابعة لإعادة تسجيل مفتاح المرور", "Enroll a new passkey": "سجّل مفتاح مرور جديد",
     "Development only. Remove this method before deployment.": "للتطوير فقط. أزل هذه الطريقة قبل النشر.", "Development password": "كلمة مرور التطوير", "Sign in with development password": "تسجيل الدخول بكلمة مرور التطوير", "Signing in…": "جارٍ تسجيل الدخول…",
-  },
-  fr: {
+};
+
+type PortalTextKey = keyof typeof AR_PORTAL_TRANSLATIONS;
+
+const FR_PORTAL_TRANSLATIONS: Record<PortalTextKey, string> = {
     "This Article is public. Save changes to update the published version.": "Cet article est publié. Enregistrez les modifications pour mettre à jour la version publique.", "What kind of piece is this? Op-ed, essay, policy brief, published article.": "De quel type de texte s’agit-il ? Tribune, essai, note de politique publique ou article publié.", "Original publication date": "Date de publication originale", "Original publication URL": "URL de publication originale", "If the piece first appeared elsewhere, provide both publication names. The URL is optional.": "Si le texte est d’abord paru ailleurs, indiquez les noms de publication dans les langues concernées. L’URL est facultative.", "Gallery image": "Image de la galerie", "JPEG, PNG, or WebP, up to 8 MB. Draft images remain private until published.": "JPEG, PNG ou WebP, jusqu’à 8 Mo. Les images en brouillon restent privées jusqu’à leur publication.", "Drop an image here or choose a file": "Déposez une image ici ou choisissez un fichier", "Current image is kept unless you choose a replacement.": "L’image actuelle est conservée sauf si vous choisissez un remplacement.", "No image selected.": "Aucune image sélectionnée.", "Gallery image upload area": "Zone d’envoi d’image de galerie", "Gallery image file": "Fichier image de galerie", "Date taken": "Date de prise de vue", "Moving to draft...": "Retour au brouillon…", "Move to draft": "Repasser en brouillon",
     "Loading Upcoming Events...": "Chargement des événements à venir...", "Upcoming Events could not be loaded.": "Impossible de charger les événements à venir.", "No Upcoming Events yet.": "Aucun événement à venir pour le moment.", "Untitled Upcoming Event": "Événement à venir sans titre", "Institution not set": "Institution non renseignée", "Event date not set": "Date de l’événement non renseignée", "Role not set": "Rôle non renseigné",
     "Loading Education Entries...": "Chargement des formations...", "Education Entries could not be loaded.": "Impossible de charger les formations.", "No Education Entries yet.": "Aucune formation pour le moment.", "Untitled Education Entry": "Formation sans titre", "Dates not set": "Dates non renseignées",
@@ -88,7 +90,11 @@ const PORTAL_TRANSLATIONS: Record<Exclude<LocaleCode, "en">, Record<string, stri
     "Sign in with passkey": "Se connecter avec une clé d’accès", "Waiting for passkey…": "En attente de la clé d’accès…", "Enroll this passkey": "Enregistrer cette clé d’accès",
     "Recovery code": "Code de récupération", "Continue to passkey re-enrollment": "Continuer vers la réinscription de la clé d’accès", "Enroll a new passkey": "Enregistrer une nouvelle clé d’accès",
     "Development only. Remove this method before deployment.": "Développement uniquement. Retirez cette méthode avant le déploiement.", "Development password": "Mot de passe de développement", "Sign in with development password": "Se connecter avec le mot de passe de développement", "Signing in…": "Connexion…",
-  },
+};
+
+const PORTAL_TRANSLATIONS: Record<Exclude<LocaleCode, "en">, Record<PortalTextKey, string>> = {
+  ar: AR_PORTAL_TRANSLATIONS,
+  fr: FR_PORTAL_TRANSLATIONS,
 };
 
 function localeFromDevice(language: string | undefined): LocaleCode {
@@ -97,13 +103,13 @@ function localeFromDevice(language: string | undefined): LocaleCode {
   return "en";
 }
 
-const PortalLocaleContext = createContext<PortalLocaleContextValue>({ locale: "en", t: (english) => english });
+const PortalLocaleContext = createContext<PortalLocaleContextValue>({ locale: "en", t: (key) => key });
 
 export function PortalLocaleProvider({ children }: { children: ReactNode }) {
   const locale = typeof navigator === "undefined" ? "en" : localeFromDevice(navigator.language);
   const value = useMemo<PortalLocaleContextValue>(() => ({
     locale,
-    t: (english) => PORTAL_TRANSLATIONS[locale as Exclude<LocaleCode, "en">]?.[english] ?? english,
+    t: (key) => locale === "en" ? key : PORTAL_TRANSLATIONS[locale][key as PortalTextKey] ?? key,
   }), [locale]);
 
   useEffect(() => {
