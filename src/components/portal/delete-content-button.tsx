@@ -22,8 +22,10 @@ export function DeleteContentButton({ itemType, id, returnTo }: { itemType: Cont
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ itemType, id }),
       });
-      const payload = await response.json().catch(() => null) as { error?: string } | null;
-      if (!response.ok) throw new Error(payload?.error ?? t("The item could not be deleted."));
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null) as { error?: string } | null;
+        throw new Error(payload?.error ?? t("The item could not be deleted."));
+      }
       router.replace(returnTo);
       router.refresh();
     } catch (error) {

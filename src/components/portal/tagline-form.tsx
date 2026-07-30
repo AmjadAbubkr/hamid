@@ -45,8 +45,12 @@ export function TaglineForm() {
     async function load() {
       try {
         const response = await fetch("/api/portal/tagline", { cache: "no-store" });
+        if (!response.ok) {
+          const result = await response.json().catch(() => null) as { error?: string } | null;
+          throw new Error(result?.error ?? t("The Tagline could not be loaded."));
+        }
         const result = await response.json() as { error?: string; tagline?: Tagline };
-        if (!response.ok || !result.tagline) throw new Error(result.error ?? t("The Tagline could not be loaded."));
+        if (!result.tagline) throw new Error(result.error ?? t("The Tagline could not be loaded."));
         if (active) {
           setTagline(result.tagline);
           setTaglineAr(result.tagline.tagline_ar);
@@ -63,7 +67,7 @@ export function TaglineForm() {
     }
     void load();
     return () => { active = false; };
-  }, []);
+  }, [t]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -82,8 +86,12 @@ export function TaglineForm() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ tagline_ar: taglineAr, tagline_fr: taglineFr, tagline_en: taglineEn, action }),
       });
+      if (!response.ok) {
+        const result = await response.json().catch(() => null) as { error?: string } | null;
+        throw new Error(result?.error ?? t("The Tagline could not be saved."));
+      }
       const result = await response.json() as { error?: string; tagline?: Tagline };
-      if (!response.ok || !result.tagline) throw new Error(result.error ?? t("The Tagline could not be saved."));
+      if (!result.tagline) throw new Error(result.error ?? t("The Tagline could not be saved."));
 
       setTagline(result.tagline);
       setMessage(action === "publish"
